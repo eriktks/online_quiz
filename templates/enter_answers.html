@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>Enter answers</title>
+ </head>
+ <body>
+  <noscript><font color="red">JAVASCRIPT NOT ENABLED. ANSWERS MAY NOT BE SAVED!!</font><hr></noscript>
+  <p>Name: {{participant_name}}</p>
+  <p>Enter your answers below</p>
+  <form action="{{next_url}}" method="post">
+   <table>
+   {% for i in range(1, (nbr_of_questions|int)+1) %}
+    {% if i <= (page_nbr|int)*10 and i > ((page_nbr|int)-1)*10 %}
+     {% set autofocus = "" %}
+     {% if ((i-1)|string()) == last_changed_key %}
+      {% set autofocus = "autofocus" %}
+     {% endif %}
+     <tr><td align="right">{{ i }}.</td><td> <input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="this.form.submit()" {{ autofocus }} /></tr>
+    {% endif %}
+   {% endfor %}
+   </table>
+   <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+   <input type="hidden" name="nbr_of_questions" value="{{nbr_of_questions}}" />
+   <input type="hidden" name="participant_id" value="{{participant_id}}" />
+   <input type="hidden" name="participant_name" value="{{participant_name}}" />
+   <input type="hidden" name="page_nbr" value="{{page_nbr}}" />
+   <input type="hidden" name="status" value="{{status}}" />
+  </form>
+  <table>
+   <tr>
+    {% if page_nbr|int > 1 %}
+     {% set prev_page_nbr = (page_nbr|int)-1 %}
+    {% else %}
+     {% set prev_page_nbr = (((nbr_of_questions|int)/10)|round(method="ceil"))|int %}
+    {% endif %}
+    <td>
+     <form action="{{next_url}}" method="post">
+      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+      <input type="hidden" name="nbr_of_questions" value="{{nbr_of_questions}}" />
+      <input type="hidden" name="participant_id" value="{{participant_id}}" />
+      <input type="hidden" name="participant_name" value="{{participant_name}}" />
+      <input type="hidden" name="page_nbr" value="{{prev_page_nbr}}" />
+      <input type="hidden" name="status" value="{{status}}" />
+      <input type="submit" value="Previous" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+     </form>
+    </td>
+    {% if page_nbr|int < (nbr_of_questions|int)/10 %}
+     {% set next_page_nbr = (page_nbr|int)+1 %}
+    {% else %}
+     {% set next_page_nbr = 1 %}
+    {% endif %}
+    <td>
+     <form action="{{next_url}}" method="post">
+      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+      <input type="hidden" name="nbr_of_questions" value="{{nbr_of_questions}}" />
+      <input type="hidden" name="participant_id" value="{{participant_id}}" />
+      <input type="hidden" name="participant_name" value="{{participant_name}}" />
+      <input type="hidden" name="page_nbr" value="{{next_page_nbr}}" />
+      <input type="hidden" name="status" value="{{status}}" />
+      <input type="submit" value="Next" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+     </form>
+    </td>
+    {% if page_nbr|int >= (nbr_of_questions|int)/10 %}
+    <td>
+     <form action="{{final_url}}" method="post">
+      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+      <input type="hidden" name="nbr_of_questions" value="{{nbr_of_questions}}" />
+      <input type="hidden" name="participant_id" value="{{participant_id}}" />
+      <input type="hidden" name="participant_name" value="{{participant_name}}" />
+      <input type="hidden" name="status" value="{{status}}" />
+      <input type="submit" value="Finish" style="background-color:lightgreen; border-color:lightgreen; border-radius:5px; padding:4px;" />
+     </form>
+    </td>
+    {% endif %}
+   </tr>
+  </table>
+ </body>
+</html>

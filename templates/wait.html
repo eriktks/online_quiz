@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <title>Wait</title>
+  <!-- source: https://www.w3schools.com/howto/howto_js_copy_clipboard.asp -->
+  <script>
+   function copyText() {
+    var source_element = document.getElementById("quiz_url");
+    source_element.type = "text"
+    source_element.select();
+    source_element.setSelectionRange(0, 99999)
+    document.execCommand("copy");
+    source_element.type = "hidden"
+   }
+  </script>
+ </head>
+ <body>
+  <p>
+   <strong>{{quiz_name}}</strong>
+   <input type="hidden" name="quiz_url" id="quiz_url" value="{{participate_url}}?quiz_id={{quiz_id}}" />
+   <button onclick="copyText()" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;">Copy quiz address</button>
+  </p>
+  <form action="{{this_url}}" method="post">
+   Name: <input type="text" name="participant_name_new" size="20" value="{{participant_name}}" onchange="this.form.submit()"/>
+   <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+   <input type="hidden" name="participant_id" value="{{participant_id}}" />
+   <input type="submit" value="Change name" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+  </form>
+  <p>Wait for the quiz master to give the sign to start the quiz</p>
+  <table>
+  <tr><th align="left">Name</th><th>Status</th></tr>
+  {% for key in results %}
+   <tr><td> {{results[key]["participant_name"]}} </td>
+   <td align="center"> {{results[key]["status"]}} </td>
+  {% endfor %}
+  </table>
+  <table>
+   <tr>
+    <td>
+     <form action="{{this_url}}" method="post">
+      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+      <input type="hidden" name="participant_id" value="{{participant_id}}" />
+      <input type="submit" value="Update" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+     </form>
+    </td>
+    <td>
+     <form action="{{next_url}}" method="post">
+      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+      <input type="hidden" name="participant_id" value="{{participant_id}}" />
+      <input type="hidden" name="page_nbr" value="1" />
+      <input type="submit" value="Start quiz" style="background-color:lightgreen; border-color:lightgreen; border-radius:5px; padding:4px;" />
+     </form>
+    </td>
+   </tr>
+  <table>
+</script>
+ </body>
+</html>
