@@ -37,6 +37,7 @@ FINISHED = "finished"
 CHECKING = "checking"
 CHECK = "CHECK"
 DOWNLOAD = "download"
+ERROR = "error"
 
 app = Flask(__name__)
 
@@ -76,7 +77,7 @@ def write_log(row_in):
     outfile.close()
 
 
-def start_quiz(request_form):
+def start_new_quiz(request_form):
     error_text = ""
     try:
         quiz_name = request_form["quiz_name"]
@@ -90,12 +91,13 @@ def start_quiz(request_form):
             raise Exception("empty host name")
         quiz_id = str(get_random_number())
         participant_id = str(get_random_number())
-        write_log([START_QUIZ, quiz_id, quiz_name, int(nbr_of_questions)])
-        write_log([PARTICIPANT, quiz_id, request.remote_addr, participant_id, participant_name])
-        write_log([STATUS, quiz_id, request.remote_addr, participant_id, WAITING])
+        ip_address = request.remote_addr
+        write_log([START_QUIZ, quiz_id, quiz_name, int(nbr_of_questions), participant_id, ip_address])
+        write_log([PARTICIPANT, quiz_id, ip_address, participant_id, participant_name])
+        write_log([STATUS, quiz_id, ip_address, participant_id, WAITING])
         return(quiz_id, participant_id, "")
     except Exception as e:
-        error_text = "ERR1 "+str(e)
+        error_text = ERROR+" (start_new_quiz): "+str(e)
     return("", "", error_text)
 
 
@@ -226,7 +228,9 @@ def read_status(quiz_id, ip_address, participant_id):
 
 
 def make_quiz_result_text(quiz_id, participant_id):
-    quiz_name, nbr_of_questions = get_quiz_details(quiz_id)
+    quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+    if len(error_text) > 0:
+        raise(Exception(error_text))
     participant_name = get_participant_details(participant_id)
     answers = read_answers_no_ip(quiz_id, nbr_of_questions, participant_id)
     checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id)
@@ -263,13 +267,17 @@ def make_quiz_result_text(quiz_id, participant_id):
 def get_quiz_details(quiz_id):
     quiz_name = ""
     nbr_of_questions = ""
+    error_text = ""
     infile = open(DATA_DIR+LOG_FILE, "r")
     csvreader = csv.reader(infile)
     for row in csvreader:
         if row[1] == START_QUIZ and row[2] == quiz_id:
             quiz_name = str(row[3])
             nbr_of_questions = str(row[4])
-    return(quiz_name, nbr_of_questions)
+    infile.close()
+    if quiz_name == "" or nbr_of_questions == "": 
+        error_text = f"unknown quiz: {quiz_id}"
+    return(quiz_name, nbr_of_questions, error_text)
 
 
 def get_participant_details(participant_id):
@@ -282,33 +290,67 @@ def get_participant_details(participant_id):
     return(participant_name)
 
 
+def answering_started(quiz_id):
+    return_value = False
+    infile = open(DATA_DIR+LOG_FILE, "r")
+    csvreader = csv.reader(infile)
+    for row in csvreader:
+        if row[1] == ANSWER and row[2] == quiz_id:
+            return_value = True
+            break
+        if row[1] == STATUS and row[2] == quiz_id and row[5] == STARTED:
+            return_value = True
+            break
+    infile.close()
+    return(return_value)
+
+
+def is_host(quiz_id, participant_id, ip_address):
+    infile = open(DATA_DIR+LOG_FILE, "r")
+    csvreader = csv.reader(infile)
+    participant_id_host = ""
+    ip_address_host = ""
+    for row in csvreader:
+        if row[1] == START_QUIZ and row[2] == quiz_id:
+            participant_id_host = row[5]
+            ip_address_host = row[6]
+    infile.close()
+    return(participant_id == participant_id_host and ip_address == ip_address_host)
+ 
+
 @app.route("/",methods=["GET","POST"])
 def init():
+    return(render_template("index.html", start_quiz_url=BASE_URL+"start_quiz", participate_url=BASE_URL+PARTICIPATE))
+
+
+@app.route("/start_quiz",methods=["GET","POST"])
+def start_quiz():
     error_text = ""
     try:
         if not request.method == "POST":
-            return(render_template("start_quiz.html", next_url=BASE_URL, error_text=error_text))
+            return(render_template("start_quiz.html", next_url=BASE_URL+"start_quiz", home_url=BASE_URL))
         else:
-            quiz_id, participant_id, error_text = start_quiz(request.form)
+            quiz_id, participant_id, error_text = start_new_quiz(request.form)
             if len(error_text) > 0:
                 raise(Exception(error_text))
-            quiz_name, nbr_of_questions = get_quiz_details(quiz_id)
+            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+            if len(error_text) > 0:
+                raise(Exception(error_text))
             participant_name = get_participant_details(participant_id)
             quiz_name, quiz_date, results = read_results(quiz_id)
-            return(render_template(WAIT+".html", next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
+            return(render_template(WAIT+".html", next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=request.host_url[0:len(request.host_url)-1]+BASE_URL+PARTICIPATE, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
     except Exception as e:
-        error_text += "ERR2 "+str(e)
+        error_text += ERROR+" (start_quiz): "+str(e)
     return(render_template("start_quiz.html", next_url=BASE_URL, error_text=error_text))
 
 
 @app.route("/"+PARTICIPATE,methods=["GET","POST"])
 def participate():
     quiz_id = ""
-    participant_id = get_random_number()
     if request.method == "GET":
         if "quiz_id" in request.args: 
             quiz_id = request.args["quiz_id"]
-    return(render_template(PARTICIPATE+".html", next_url=BASE_URL+WAIT, quiz_id=quiz_id, participant_id=participant_id))
+    return(render_template(PARTICIPATE+".html", next_url=BASE_URL+WAIT,  home_url=BASE_URL, quiz_id=quiz_id))
 
 
 @app.route("/"+WAIT,methods=["GET","POST"])
@@ -317,9 +359,14 @@ def wait():
     if request.method == "POST":
         try:
             quiz_id = request.form["quiz_id"]
-            quiz_name, nbr_of_questions = get_quiz_details(quiz_id)
+            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+            if len(error_text) > 0:
+                raise(Exception(error_text))
             quiz_name, quiz_date, results = read_results(quiz_id)
-            participant_id = request.form["participant_id"]
+            if "participant_id" in request.form:
+                participant_id = request.form["participant_id"]
+            else:
+                participant_id = str(get_random_number())
             if participant_id not in results:
                 participant_name = str(request.form["participant_name"]).strip()
                 if participant_name == "":
@@ -335,9 +382,9 @@ def wait():
             quiz_name, quiz_date, results = read_results(quiz_id)
             return(render_template(WAIT+".html", next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=request.host_url[0:len(request.host_url)-1]+BASE_URL+PARTICIPATE, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
         except Exception as e:
-            error_text = "ERR3 "+str(e)
+            error_text = ERROR+f" ({WAIT}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
-    return(render_template(PARTICIPATE+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, participant_id=get_random_number(), error_text=error_text))
+    return(render_template(ERROR+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
 
 @app.route("/"+ENTER_ANSWERS,methods=["GET","POST"])
@@ -347,9 +394,13 @@ def enter_answers():
         try:
             participant_id = request.form["participant_id"]
             quiz_id = request.form["quiz_id"]
-            quiz_name, nbr_of_questions = get_quiz_details(quiz_id)
+            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+            if len(error_text) > 0:
+                raise(Exception(error_text))
             participant_name = get_participant_details(participant_id)
             ip_address = request.remote_addr
+            if not answering_started(quiz_id) and not is_host(quiz_id, participant_id, ip_address):
+                raise(Exception("You cannot enter answers yet. Please go back via the button 'Go Back' below"))
             answers = read_answers(quiz_id, nbr_of_questions, ip_address, participant_id)
             page_nbr = request.form["page_nbr"]
             status = read_status(quiz_id, ip_address, participant_id)
@@ -368,9 +419,9 @@ def enter_answers():
                     last_changed_key = key
             return(render_template("enter_answers.html", next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status))
         except Exception as e:
-            error_text = "ERR4 "+str(e)
+            error_text = ERROR+f" ({ENTER_ANSWERS}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
-    return(render_template(PARTICIPATE+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, participant_id=get_random_number(), error_text=error_text))
+    return(render_template(ERROR+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
 
 @app.route("/"+EXAMINE_RESULTS,methods=["GET","POST"])
@@ -380,7 +431,9 @@ def examine_results():
         try:
             participant_id = request.form["participant_id"]
             quiz_id = request.form["quiz_id"]
-            quiz_name, nbr_of_questions = get_quiz_details(quiz_id)
+            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+            if len(error_text) > 0:
+                raise(Exception(error_text))
             participant_name = get_participant_details(participant_id)
             ip_address = request.remote_addr
             status = read_status(quiz_id, ip_address, participant_id)
@@ -390,9 +443,9 @@ def examine_results():
             quiz_name, quiz_date, results = read_results(quiz_id)
             return(render_template(EXAMINE_RESULTS+".html", next_url=BASE_URL+CHECK_ANSWERS, this_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, results=results, quiz_name=quiz_name))
         except Exception as e:
-            error_text = "ERR5 "+str(e)
+            error_text = ERROR+f" ({EXAMINE_RESULTS}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
-    return(render_template(PARTICIPATE+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, participant_id=get_random_number(), error_text=error_text))
+    return(render_template(ERROR+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
 
 @app.route("/"+CHECK_ANSWERS,methods=["GET","POST"])
@@ -404,7 +457,9 @@ def check_answers():
             participant_id_check = request.form["participant_id_check"]
             participant_name_check = request.form["participant_name_check"]
             quiz_id = request.form["quiz_id"]
-            quiz_name, nbr_of_questions = get_quiz_details(quiz_id)
+            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+            if len(error_text) > 0:
+                raise(Exception(error_text))
             participant_name = get_participant_details(participant_id)
             page_nbr = request.form["page_nbr"]
             ip_address = request.remote_addr
@@ -424,9 +479,9 @@ def check_answers():
             checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
             return(render_template(CHECK_ANSWERS+".html", next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=participant_id_check, participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=results, check_counts=check_counts))
         except Exception as e:
-            error_text = "ERR6 "+str(e)
+            error_text = ERROR+f" ({CHECK_ANSWERS}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
-    return(render_template(PARTICIPATE+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, participant_id=get_random_number(), error_text=error_text))
+    return(render_template(ERROR+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
 
 @app.route("/"+DOWNLOAD,methods=["GET","POST"])
@@ -439,7 +494,7 @@ def download():
             text, filename = make_quiz_result_text(quiz_id, participant_id_check)
             return(Response(text, mimetype="text/plain", headers={"Content-disposition": f"attachment; filename={filename}.txt"}))
         except Exception as e:
-            error_text = "ERR7 "+str(e)
+            error_text = ERROR+f" ({DOWNLOAD}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
-    return(render_template(PARTICIPATE+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, participant_id=get_random_number(), error_text=error_text))
+    return(render_template(ERROR+".html", next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
