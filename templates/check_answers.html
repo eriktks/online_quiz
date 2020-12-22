@@ -124,7 +124,7 @@
    </tr>
   </table>
   <br />
-  <font style="font-size:0.7em">
+  <div style="font-size:0.7em">
   <table style="border-spacing:0px;">
    <tr><th></th><th style="text-align:left;">Name</th><th>Status</th><th>Answered</th><th>Checked</th><th>Correct</th><tr>
   {% for key in results %}
@@ -136,6 +136,6 @@
    <td style="text-align:center;"> {{ results[key]["correct_answers"] }} </td>
   {% endfor %}
   </table>
-  </font>
+  </div>
  </body>
 </html>
