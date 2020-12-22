@@ -2,17 +2,25 @@
 <html>
  <head>
   <title>Start Quiz</title>
+  <style>
+   .button {
+    background-color:whitesmoke;
+    border-color:whitesmoke;
+    border-radius:5px;
+    padding:4px;
+   }
+  </style>
  </head>
  <body>
+  <a href="{{home_url}}"><button class="button">Home</button></a>
   <p>Enter the details of the quiz:</p>
-  <form action="{{next_url}}" method="post">
+  <form action="{{next_url}}" method="post" style="display:inline;">
    <table>
     <tr><td>Quiz name:</td><td><input type="text" name="quiz_name" size="20" /></td></tr>
     <tr><td>Number of questions:</td><td><input type="text" name="nbr_of_questions" size="5" /></td></tr>
     <tr><td>Host name</td><td><input type="text" name="participant_name" size="20" /></td></tr>
    </table>
-   <input type="submit" value="Start quiz" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+   <input type="submit" value="Start quiz" class="button" />
   </form>
-  <font color="red">{{ error_text }}</font>
  </body>
 </html>

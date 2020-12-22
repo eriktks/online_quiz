@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html>
  <head>
-  <title>Register</title>
+  <title>Participate</title>
+  <style>
+   .button {
+    background-color:whitesmoke;
+    border-color:whitesmoke;
+    border-radius:5px;
+    padding:4px;
+   }
+  </style>
  </head>
  <body>
-  <p>Take part in the quiz {{quiz_name}}</p>
-  <form action="{{next_url}}" method="post">
+  <a href="{{home_url}}"><button class="button">Home</button></a>
+  <p><strong>Participate</strong></p>
+  {% if quiz_name is defined and quiz_name != ""%}
+   <p>Take part in the quiz {{quiz_name}}</p>
+  {% endif %}
+  <form action="{{next_url}}" method="post" style="display:inline;">
    <table>
-   <tr><td>Name: </td><td><input type="text" name="participant_name" size="20" onchange="this.form.submit()"/></td></tr>
+    <tr><td>Name: </td><td><input type="text" name="participant_name" size="20"/></td></tr>
    {% if quiz_id != "" %}
     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
    {% else %}
-    <tr><td>Quiz number: </td><td><input type="text" name="quiz_id" value="{{quiz_id}}" /></td></tr>
+    <tr><td>Quiz id: </td><td><input type="text" name="quiz_id" value="{{quiz_id}}" /></td></tr>
    {% endif %}
    </table>
-   <input type="hidden" name="participant_id" value="{{participant_id}}" />
-   <input type="submit" value="Participate" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+   <input type="submit" value="Participate" class="button" />
   </form>
-  <p><font color="red">{{error_text}}</font></p>
  </body>
 </html>
