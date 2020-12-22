@@ -1,24 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
  <head>
   <title>Examine results</title>
  </head>
  <body>
   <p>Results of the quiz {{quiz_name}}</p>
   <table style="border-spacing:5px;">
-   <tr><th></th><th align="left">Name</th><th>Status</th><th>Answered</th><th>Checked</th><th>Solos</th><th>Correct</th><th>Check answers</th><tr>
+   <tr><th></th><th style="text-align:left;">Name</th><th>Status</th><th>Answered</th><th>Checked</th><th>Solos</th><th>Correct</th><th>Check answers</th><tr>
   {% for key in results %}
    {% set background_color = "white" %}
    {% if results[key]["participant_name"] == participant_name %}
     {% set background_color = "yellow" %}
    {% endif %}
-   <tr style="background-color:{{background_color}};"><td align="right">{{ loop.index }}.</td>
+   <tr style="background-color:{{background_color}};"><td style="text-align:right;">{{ loop.index }}.</td>
    <td> {{results[key]["participant_name"]}} </td>
-   <td align="center"> {{results[key]["status"]}} </td>
-   <td align="center"> {{ results[key]["answers_given"] }} </td>
-   <td align="center"> {{ results[key]["answers_checked"] }} </td>
-   <td align="center"> {{ results[key]["solos"]|length }} </td>
-   <td align="center"> {{ results[key]["correct_answers"] }} </td>
+   <td style="text-align:center;"> {{results[key]["status"]}} </td>
+   <td style="text-align:center;"> {{ results[key]["answers_given"] }} </td>
+   <td style="text-align:center;"> {{ results[key]["answers_checked"] }} </td>
+   <td style="text-align:center;"> {{ results[key]["solos"]|length }} </td>
+   <td style="text-align:center;"> {{ results[key]["correct_answers"] }} </td>
   <td>
     <form action="{{next_url}}" method="post">
     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />

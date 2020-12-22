@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
  <head>
   <title>Check answers</title>
  </head>
@@ -38,7 +38,7 @@
       <label for="wrong">-</label>
       </td>
       {% endif %}
-      <td align="right">{{ i }}.</td><td> {{ answers[i|string()] }}
+      <td style="text-align:right;">{{ i }}.</td><td> {{ answers[i|string()] }}
      </tr>
     {% endif %}
    {% endfor %}
@@ -126,14 +126,14 @@
   <br />
   <font style="font-size:0.7em">
   <table style="border-spacing:0px;">
-   <tr><th></th><th align="left">Name</th><th>Status</th><th>Answered</th><th>Checked</th><th>Correct</th><tr>
+   <tr><th></th><th style="text-align:left;">Name</th><th>Status</th><th>Answered</th><th>Checked</th><th>Correct</th><tr>
   {% for key in results %}
-   <tr><td align="right">{{ loop.index }}.</td>
+   <tr><td style="text-align:right;">{{ loop.index }}.</td>
    <td> {{ results[key]["participant_name"] }} </td>
-   <td align="center"> {{ results[key]["status"] }} </td>
-   <td align="center"> {{ results[key]["answers_given"] }} </td>
-   <td align="center"> {{ results[key]["answers_checked"] }} </td>
-   <td align="center"> {{ results[key]["correct_answers"] }} </td>
+   <td style="text-align:center;"> {{ results[key]["status"] }} </td>
+   <td style="text-align:center;"> {{ results[key]["answers_given"] }} </td>
+   <td style="text-align:center;"> {{ results[key]["answers_checked"] }} </td>
+   <td style="text-align:center;"> {{ results[key]["correct_answers"] }} </td>
   {% endfor %}
   </table>
   </font>

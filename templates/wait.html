@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
  <head>
   <title>Wait</title>
   <!-- source: https://www.w3schools.com/howto/howto_js_copy_clipboard.asp -->
@@ -28,10 +28,10 @@
   </form>
   <p>Wait for the quiz master to give the sign to start the quiz</p>
   <table>
-  <tr><th align="left">Name</th><th>Status</th></tr>
+  <tr><th style="text-align:left;">Name</th><th>Status</th></tr>
   {% for key in results %}
    <tr><td> {{results[key]["participant_name"]}} </td>
-   <td align="center"> {{results[key]["status"]}} </td>
+   <td style="text-align:left;"> {{results[key]["status"]}} </td>
   {% endfor %}
   </table>
   <table>
