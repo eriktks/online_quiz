@@ -138,6 +138,19 @@ def read_answers_no_ip(quiz_id, nbr_of_questions, participant_id):
     return(answers)
 
 
+def make_check_counts(checks, nbr_of_questions):
+    check_counts = { str(i):"0/0" for i in range(1,int(nbr_of_questions)+1) }
+    for participant_id in checks:
+        for question_id in checks[participant_id]:
+            if checks[participant_id][question_id] != "":
+                correct, count = check_counts[question_id].split("/")
+                count = str(int(count)+1)
+                if checks[participant_id][question_id] == "correct":
+                    correct = str(int(correct)+1)
+                check_counts[question_id] = "/".join([correct, count])
+    return(check_counts)
+
+
 def read_checks(quiz_id, nbr_of_questions, participant_id_check):
     checks_participant_empty = { str(i):"" for i in range(1,int(nbr_of_questions)+1) }
     checks = { participant_id_check: dict(checks_participant_empty) }
@@ -155,15 +168,7 @@ def read_checks(quiz_id, nbr_of_questions, participant_id_check):
         except Exception as e:
             pass
     infile.close()
-    check_counts = { str(i):"0/0" for i in range(1,int(nbr_of_questions)+1) }
-    for participant_id in checks:
-        for question_id in checks[participant_id]:
-            if checks[participant_id][question_id] != "":
-                correct, count = check_counts[question_id].split("/")
-                count = str(int(count)+1)
-                if checks[participant_id][question_id] == "correct":
-                    correct = str(int(correct)+1)
-                check_counts[question_id] = "/".join([correct, count])
+    check_counts = make_check_counts(checks, nbr_of_questions)
     return(checks[participant_id_check], check_counts)
 
 
@@ -174,34 +179,35 @@ def read_results_from_logfile(quiz_id):
     infile = open(DATA_DIR+LOG_FILE, "r")
     csvreader = csv.reader(infile)
     for row in csvreader:
-        if row[1] == START_QUIZ and str(row[2]) == quiz_id:
-            quiz_name = row[3]
-            quiz_date = row[0][:8]
-        elif row[1] == PARTICIPANT and str(row[2]) == quiz_id:
-            participant_id = str(row[4])
-            participant_name = str(row[5])
-            key = " ".join([participant_id])
-            if key in results:
-                results[key]["participant_name"] = participant_name
-            else:
-                results[key] = { "checks": {}, "answers": {}, "status": "", "participant_name": participant_name, "participant_id": participant_id }
-        elif row[1] == ANSWER and str(row[2]) == quiz_id:
-            participant_id = str(row[4])
-            question_nbr = str(row[5])
-            answer = str(row[6]).strip()
-            key = " ".join([participant_id])
-            results[key]["answers"][question_nbr] = answer
-        elif row[1] == CHECK and str(row[2]) == quiz_id:
-            participant_id_check = str(row[3])
-            question_nbr = str(row[5])
-            check = str(row[6]).strip()
-            key = " ".join([participant_id_check])
-            results[key]["checks"][question_nbr] = check
-        elif row[1] == STATUS and str(row[2]) == quiz_id:
-            participant_id = str(row[4])
-            key = " ".join([participant_id])
-            status = row[5]
-            results[key]["status"] = status
+        if str(row[2]) == quiz_id:
+            if row[1] == START_QUIZ:
+                quiz_name = row[3]
+                quiz_date = row[0][:8]
+            elif row[1] == PARTICIPANT:
+                participant_id = str(row[4])
+                participant_name = str(row[5])
+                key = " ".join([participant_id])
+                if key in results:
+                    results[key]["participant_name"] = participant_name
+                else:
+                    results[key] = { "checks": {}, "answers": {}, "status": "", "participant_name": participant_name, "participant_id": participant_id }
+            elif row[1] == ANSWER:
+                participant_id = str(row[4])
+                question_nbr = str(row[5])
+                answer = str(row[6]).strip()
+                key = " ".join([participant_id])
+                results[key]["answers"][question_nbr] = answer
+            elif row[1] == CHECK:
+                participant_id_check = str(row[3])
+                question_nbr = str(row[5])
+                check = str(row[6]).strip()
+                key = " ".join([participant_id_check])
+                results[key]["checks"][question_nbr] = check
+            elif row[1] == STATUS:
+                participant_id = str(row[4])
+                key = " ".join([participant_id])
+                status = row[5]
+                results[key]["status"] = status
     infile.close()
     return(quiz_name, quiz_date, results)
 
@@ -250,6 +256,14 @@ def read_status(quiz_id, ip_address, participant_id):
     return(status)
 
 
+def find_max_len_check_counts(check_counts):
+    max_len_check_counts = 0
+    for question_id in check_counts:
+        if len(check_counts[question_id]) > max_len_check_counts:
+            max_len_check_counts = len(check_counts[question_id])
+    return(max_len_check_counts)
+
+
 def make_quiz_result_text(quiz_id, participant_id):
     quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
     if len(error_text) > 0:
@@ -264,10 +278,7 @@ def make_quiz_result_text(quiz_id, participant_id):
     text += f"Score: {results[participant_id]['correct_answers']}\n"
     text += f"Solos: {len(results[participant_id]['solos'])}\n\n"
     max_len_question_id = int(log(int(nbr_of_questions), 10))
-    max_len_check_counts = 0
-    for i in range(1,int(nbr_of_questions)+1):
-        if len(check_counts[str(i)]) > max_len_check_counts:
-            max_len_check_counts = len(check_counts[str(i)])
+    max_len_check_counts = find_max_len_check_counts(check_counts)
     for i in range(1,int(nbr_of_questions)+1):
         question_nbr = str(i)
         if len(results[participant_id]["solos"]) > 0:
@@ -340,7 +351,7 @@ def is_host(quiz_id, participant_id, ip_address):
     return(participant_id == participant_id_host and ip_address == ip_address_host)
  
 
-@app.route("/",methods=["GET","POST"])
+@app.route("/",methods=["GET"])
 def init():
     return(render_template("index"+HTML_SUFFIX, start_quiz_url=BASE_URL+"start_quiz", participate_url=BASE_URL+PARTICIPATE))
 
@@ -374,148 +385,143 @@ def participate():
     return(render_template(PARTICIPATE+HTML_SUFFIX, next_url=BASE_URL+WAIT,  home_url=BASE_URL, quiz_id=quiz_id))
 
 
-@app.route("/"+WAIT,methods=["GET","POST"])
+@app.route("/"+WAIT,methods=["POST"])
 def wait():
     error_text = ""
-    if request.method == "POST":
-        try:
-            quiz_id = request.form["quiz_id"]
-            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
-            if len(error_text) > 0:
-                raise(Exception(error_text))
-            quiz_name, quiz_date, results = read_results(quiz_id)
-            if "participant_id" in request.form:
-                participant_id = request.form["participant_id"]
-            else:
-                participant_id = str(get_random_number())
-            if participant_id not in results:
-                participant_name = str(request.form["participant_name"]).strip()
-                if participant_name == "":
-                    raise(Exception("empty participant name"))
-                write_log([PARTICIPANT, quiz_id, request.remote_addr, participant_id, participant_name])
-                write_log([STATUS, quiz_id, request.remote_addr, participant_id, WAITING])
-            participant_name = get_participant_details(participant_id)
-            if "participant_name_new" in request.form:
-                participant_name_new = request.form["participant_name_new"]
-                if participant_name_new != "" and participant_name_new != participant_name:
-                    write_log([PARTICIPANT, quiz_id, request.remote_addr, participant_id, participant_name_new])
-                    participant_name = participant_name_new
-            quiz_name, quiz_date, results = read_results(quiz_id)
-            return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=request.host_url[0:len(request.host_url)-1]+BASE_URL+PARTICIPATE, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
-        except Exception as e:
-            error_text = ERROR+f" ({WAIT}): "+str(e)
+    try:
+        quiz_id = request.form["quiz_id"]
+        quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+        if len(error_text) > 0:
+            raise(Exception(error_text))
+        quiz_name, quiz_date, results = read_results(quiz_id)
+        if "participant_id" in request.form:
+            participant_id = request.form["participant_id"]
+        else:
+            participant_id = str(get_random_number())
+        if participant_id not in results:
+            participant_name = str(request.form["participant_name"]).strip()
+            if participant_name == "":
+                raise(Exception("empty participant name"))
+            write_log([PARTICIPANT, quiz_id, request.remote_addr, participant_id, participant_name])
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, WAITING])
+        participant_name = get_participant_details(participant_id)
+        if "participant_name_new" in request.form:
+            participant_name_new = request.form["participant_name_new"]
+            if participant_name_new != "" and participant_name_new != participant_name:
+                write_log([PARTICIPANT, quiz_id, request.remote_addr, participant_id, participant_name_new])
+                participant_name = participant_name_new
+        quiz_name, quiz_date, results = read_results(quiz_id)
+        return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=request.host_url[0:len(request.host_url)-1]+BASE_URL+PARTICIPATE, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
+    except Exception as e:
+        error_text = ERROR+f" ({WAIT}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
     return(render_template(ERROR+HTML_SUFFIX, next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
 
-@app.route("/"+ENTER_ANSWERS,methods=["GET","POST"])
+@app.route("/"+ENTER_ANSWERS,methods=["POST"])
 def enter_answers():
     error_text = ""
-    if request.method == "POST":
-        try:
-            participant_id = request.form["participant_id"]
-            quiz_id = request.form["quiz_id"]
-            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
-            if len(error_text) > 0:
-                raise(Exception(error_text))
-            participant_name = get_participant_details(participant_id)
-            ip_address = request.remote_addr
-            if not answering_started(quiz_id) and not is_host(quiz_id, participant_id, ip_address):
-                raise(Exception("You cannot enter answers yet. Please go back via the button 'Go Back' below"))
-            answers = read_answers(quiz_id, nbr_of_questions, ip_address, participant_id)
-            page_nbr = request.form["page_nbr"]
-            status = read_status(quiz_id, ip_address, participant_id)
-            if status == WAITING:
-                write_log([STATUS, quiz_id, request.remote_addr, participant_id, STARTED])
-                status = STARTED
-            if status != STARTED:
-                return(examine_results())
-            last_changed_key = str(10*(int(page_nbr)-1))
-            for key in request.form:
-                key = str(key)
-                answer = request.form[key]
-                if re.search("^[0-9]+$",key) and key in answers and answer != answers[key]:
-                    write_log([ANSWER, quiz_id, ip_address, participant_id, key, answer])
-                    answers[key] = answer
-                    last_changed_key = key
-            return(render_template("enter_answers"+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status))
-        except Exception as e:
-            error_text = ERROR+f" ({ENTER_ANSWERS}): "+str(e)
+    try:
+        participant_id = request.form["participant_id"]
+        quiz_id = request.form["quiz_id"]
+        quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+        if len(error_text) > 0:
+            raise(Exception(error_text))
+        participant_name = get_participant_details(participant_id)
+        ip_address = request.remote_addr
+        if not answering_started(quiz_id) and not is_host(quiz_id, participant_id, ip_address):
+            raise(Exception("You cannot enter answers yet. Please go back via the button 'Go Back' below"))
+        answers = read_answers(quiz_id, nbr_of_questions, ip_address, participant_id)
+        page_nbr = request.form["page_nbr"]
+        status = read_status(quiz_id, ip_address, participant_id)
+        if status == WAITING:
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, STARTED])
+            status = STARTED
+        if status != STARTED:
+            return(examine_results())
+        last_changed_key = str(10*(int(page_nbr)-1))
+        for key in request.form:
+            key = str(key)
+            answer = request.form[key]
+            if re.search("^[0-9]+$",key) and key in answers and answer != answers[key]:
+                write_log([ANSWER, quiz_id, ip_address, participant_id, key, answer])
+                answers[key] = answer
+                last_changed_key = key
+        return(render_template("enter_answers"+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status))
+    except Exception as e:
+        error_text = ERROR+f" ({ENTER_ANSWERS}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
     return(render_template(ERROR+HTML_SUFFIX, next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
 
-@app.route("/"+EXAMINE_RESULTS,methods=["GET","POST"])
+@app.route("/"+EXAMINE_RESULTS,methods=["POST"])
 def examine_results():
     error_text = ""
-    if request.method == "POST":
-        try:
-            participant_id = request.form["participant_id"]
-            quiz_id = request.form["quiz_id"]
-            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
-            if len(error_text) > 0:
-                raise(Exception(error_text))
-            participant_name = get_participant_details(participant_id)
-            ip_address = request.remote_addr
-            status = read_status(quiz_id, ip_address, participant_id)
-            if status == STARTED:
-                write_log([STATUS, quiz_id, request.remote_addr, participant_id, FINISHED])
-                status = FINISHED
-            quiz_name, quiz_date, results = read_results(quiz_id)
-            return(render_template(EXAMINE_RESULTS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, this_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, results=results, quiz_name=quiz_name))
-        except Exception as e:
-            error_text = ERROR+f" ({EXAMINE_RESULTS}): "+str(e)
+    try:
+        participant_id = request.form["participant_id"]
+        quiz_id = request.form["quiz_id"]
+        quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+        if len(error_text) > 0:
+            raise(Exception(error_text))
+        participant_name = get_participant_details(participant_id)
+        ip_address = request.remote_addr
+        status = read_status(quiz_id, ip_address, participant_id)
+        if status == STARTED:
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, FINISHED])
+            status = FINISHED
+        quiz_name, quiz_date, results = read_results(quiz_id)
+        return(render_template(EXAMINE_RESULTS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, this_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, results=results, quiz_name=quiz_name))
+    except Exception as e:
+        error_text = ERROR+f" ({EXAMINE_RESULTS}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
     return(render_template(ERROR+HTML_SUFFIX, next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
 
-@app.route("/"+CHECK_ANSWERS,methods=["GET","POST"])
+@app.route("/"+CHECK_ANSWERS,methods=["POST"])
 def check_answers():
     error_text = ""
-    if request.method == "POST":
-        try:
-            participant_id = request.form["participant_id"]
-            participant_id_check = request.form["participant_id_check"]
-            participant_name_check = request.form["participant_name_check"]
-            quiz_id = request.form["quiz_id"]
-            quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
-            if len(error_text) > 0:
-                raise(Exception(error_text))
-            participant_name = get_participant_details(participant_id)
-            page_nbr = request.form["page_nbr"]
-            ip_address = request.remote_addr
-            status = read_status(quiz_id, ip_address, participant_id)
-            if status == FINISHED:
-                write_log([STATUS, quiz_id, request.remote_addr, participant_id, CHECKING])
-                status = CHECKING
-            answers = read_answers_no_ip(quiz_id, nbr_of_questions, participant_id_check)
-            checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
-            for key in request.form:
-                key = str(key)
-                check = str(request.form[key]).strip()
-                if re.search("^[0-9]+$",key) and key in checks and check != checks[key] and participant_id != participant_id_check:
-                    write_log([CHECK, quiz_id, participant_id_check, participant_id, key, check])
-                    checks[key] = check
-            quiz_name, quiz_date, results = read_results(quiz_id)
-            checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
-            return(render_template(CHECK_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=participant_id_check, participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=results, check_counts=check_counts))
-        except Exception as e:
-            error_text = ERROR+f" ({CHECK_ANSWERS}): "+str(e)
+    try:
+        participant_id = request.form["participant_id"]
+        participant_id_check = request.form["participant_id_check"]
+        participant_name_check = request.form["participant_name_check"]
+        quiz_id = request.form["quiz_id"]
+        quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
+        if len(error_text) > 0:
+            raise(Exception(error_text))
+        participant_name = get_participant_details(participant_id)
+        page_nbr = request.form["page_nbr"]
+        ip_address = request.remote_addr
+        status = read_status(quiz_id, ip_address, participant_id)
+        if status == FINISHED:
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, CHECKING])
+            status = CHECKING
+        answers = read_answers_no_ip(quiz_id, nbr_of_questions, participant_id_check)
+        checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
+        for key in request.form:
+            key = str(key)
+            check = str(request.form[key]).strip()
+            if re.search("^[0-9]+$",key) and key in checks and check != checks[key] and participant_id != participant_id_check:
+                write_log([CHECK, quiz_id, participant_id_check, participant_id, key, check])
+                checks[key] = check
+        quiz_name, quiz_date, results = read_results(quiz_id)
+        checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
+        return(render_template(CHECK_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=participant_id_check, participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=results, check_counts=check_counts))
+    except Exception as e:
+        error_text = ERROR+f" ({CHECK_ANSWERS}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
     return(render_template(ERROR+HTML_SUFFIX, next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
 
-@app.route("/"+DOWNLOAD,methods=["GET","POST"])
+@app.route("/"+DOWNLOAD,methods=["POST"])
 def download():
     error_text = ""
-    if request.method == "POST":
-        try:
-            participant_id_check = request.form["participant_id_check"]
-            quiz_id = request.form["quiz_id"]
-            text, filename = make_quiz_result_text(quiz_id, participant_id_check)
-            return(Response(text, mimetype="text/plain", headers={"Content-disposition": f"attachment; filename={filename}.txt"}))
-        except Exception as e:
-            error_text = ERROR+f" ({DOWNLOAD}): "+str(e)
+    try:
+        participant_id_check = request.form["participant_id_check"]
+        quiz_id = request.form["quiz_id"]
+        text, filename = make_quiz_result_text(quiz_id, participant_id_check)
+        return(Response(text, mimetype="text/plain", headers={"Content-disposition": f"attachment; filename={filename}.txt"}))
+    except Exception as e:
+        error_text = ERROR+f" ({DOWNLOAD}): "+str(e)
     quiz_id, quiz_name, nbr_of_questions = get_current_quiz_id()
     return(render_template(ERROR+HTML_SUFFIX, next_url=BASE_URL+WAIT, quiz_name=quiz_name, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, error_text=error_text))
 
