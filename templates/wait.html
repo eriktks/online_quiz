@@ -17,8 +17,6 @@
  <body>
   <p>
    <strong>{{quiz_name}}</strong>
-   <input type="hidden" name="quiz_url" id="quiz_url" value="{{participate_url}}?quiz_id={{quiz_id}}" />
-   <button onclick="copyText()" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;">Copy quiz address</button>
   </p>
   <form action="{{this_url}}" method="post">
    Name: <input type="text" name="participant_name_new" size="20" value="{{participant_name}}" onchange="this.form.submit()"/>
@@ -30,8 +28,14 @@
   <table>
   <tr><th style="text-align:left;">Name</th><th>Status</th></tr>
   {% for key in results %}
-   <tr><td> {{results[key]["participant_name"]}} </td>
-   <td style="text-align:left;"> {{results[key]["status"]}} </td>
+   {% set background_color = "white" %}
+   {% if results[key]["participant_name"] == participant_name %}
+    {% set background_color = "yellow" %}
+   {% endif %}
+   <tr style="background-color:{{background_color}};">
+    <td> {{results[key]["participant_name"]}} </td>
+    <td style="text-align:left;"> {{results[key]["status"]}} </td>
+   </tr>
   {% endfor %}
   </table>
   <table>
@@ -43,6 +47,30 @@
       <input type="submit" value="Update" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
      </form>
     </td>
+    {% if participate_url != "" %}
+    <td>
+     <input type="hidden" name="quiz_url" id="quiz_url" value="{{participate_url}}?quiz_id={{quiz_id}}" />
+     <button onclick="copyText()" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;">Copy quiz address</button>
+    </td>
+    {% endif %}
+    {% if open_answering_url != "" %}
+    <td>
+     <form action="{{open_answering_url}}" method="post">
+      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+      <input type="hidden" name="participant_id" value="{{participant_id}}" />
+      <input type="submit" value="Open answering" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
+     </form>
+    </td>
+    {% endif %}
+    {% if open_checking_url != "" %}
+    <td>
+      <form action="{{open_checking_url}}" method="post">
+      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+      <input type="hidden" name="participant_id" value="{{participant_id}}" />
+      <input type="submit" value="Open checking" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
+     </form>
+    </td>
+    {% endif %}
     <td>
      <form action="{{next_url}}" method="post">
       <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
@@ -53,6 +81,5 @@
     </td>
    </tr>
   <table>
-</script>
  </body>
 </html>
