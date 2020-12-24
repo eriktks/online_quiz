@@ -15,11 +15,11 @@
   <a href="{{home_url}}"><button class="button">Home</button></a>
   <p>Enter the details of the quiz:</p>
   <form action="{{next_url}}" method="post" style="display:inline;">
-   <table>
-    <tr><td>Quiz name:</td><td><input type="text" name="quiz_name" size="20" /></td></tr>
-    <tr><td>Number of questions:</td><td><input type="text" name="nbr_of_questions" size="5" /></td></tr>
-    <tr><td>Host name</td><td><input type="text" name="participant_name" size="20" /></td></tr>
-   </table>
+   <div style="display:table;">
+    <div style="display:table-row;"><div style="display:table-cell;">Quiz name:</div><div style="display:table-cell;"><input type="text" name="quiz_name" size="20" /></div></div>
+    <div style="display:table-row;"><div style="display:table-cell;">Number of questions:</div><div style="display:table-cell;"><input type="text" name="nbr_of_questions" size="5" /></div></div>
+    <div style="display:table-row;"><div style="display:table-cell;">Host name</div><div style="display:table-cell;"><input type="text" name="participant_name" size="20" /></div></div>
+   </div>
    <input type="submit" value="Start quiz" class="button" />
   </form>
  </body>

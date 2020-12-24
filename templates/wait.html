@@ -25,8 +25,8 @@
    <input type="submit" value="Change name" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
   </form>
   <p>Wait for the quiz master to give the sign to start the quiz</p>
-  <table>
-  <tr><th style="text-align:left;">Name</th><th>Status</th></tr>
+  <table role="presentation">
+  <tr><th scope="column" style="text-align:left;">Name</th><th scope="column">Status</th></tr>
   {% for key in results %}
    {% set background_color = "white" %}
    {% if results[key]["participant_name"] == participant_name %}
@@ -38,48 +38,46 @@
    </tr>
   {% endfor %}
   </table>
-  <table>
-   <tr>
-    <td>
-     <form action="{{this_url}}" method="post">
-      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
-      <input type="hidden" name="participant_id" value="{{participant_id}}" />
-      <input type="submit" value="Update" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
-     </form>
-    </td>
-    {% if participate_url != "" %}
-    <td>
-     <input type="hidden" name="quiz_url" id="quiz_url" value="{{participate_url}}?quiz_id={{quiz_id}}" />
-     <button onclick="copyText()" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;">Copy quiz address</button>
-    </td>
-    {% endif %}
-    {% if open_answering_url != "" %}
-    <td>
-     <form action="{{open_answering_url}}" method="post">
-      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
-      <input type="hidden" name="participant_id" value="{{participant_id}}" />
-      <input type="submit" value="Open answering" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
-     </form>
-    </td>
-    {% endif %}
-    {% if open_checking_url != "" %}
-    <td>
-      <form action="{{open_checking_url}}" method="post">
-      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
-      <input type="hidden" name="participant_id" value="{{participant_id}}" />
-      <input type="submit" value="Open checking" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
-     </form>
-    </td>
-    {% endif %}
-    <td>
-     <form action="{{next_url}}" method="post">
-      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
-      <input type="hidden" name="participant_id" value="{{participant_id}}" />
-      <input type="hidden" name="page_nbr" value="1" />
-      <input type="submit" value="Start quiz" style="background-color:lightgreen; border-color:lightgreen; border-radius:5px; padding:4px;" />
-     </form>
-    </td>
-   </tr>
-  <table>
+  <div>
+   <div style="float:left; margin:2px;">
+    <form action="{{this_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="submit" value="Update" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   {% if participate_url != "" %}
+   <div style="float:left; margin:2px;">
+    <input type="hidden" name="quiz_url" id="quiz_url" value="{{participate_url}}?quiz_id={{quiz_id}}" />
+    <button onclick="copyText()" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;">Copy quiz address</button>
+   </div>
+   {% endif %}
+   {% if open_answering_url != "" %}
+   <div style="float:left; margin:2px;">
+    <form action="{{open_answering_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="submit" value="Open answering" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   {% endif %}
+   {% if open_checking_url != "" %}
+   <div style="float:left; margin:2px;">
+     <form action="{{open_checking_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="submit" value="Open checking" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   {% endif %}
+   <div style="float:left; margin:2px;">
+    <form action="{{next_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="hidden" name="page_nbr" value="1" />
+     <input type="submit" value="Start quiz" style="background-color:lightgreen; border-color:lightgreen; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+  </div>
  </body>
 </html>

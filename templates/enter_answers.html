@@ -8,10 +8,10 @@
   <p>Name: {{participant_name}}</p>
   <p>Enter your answers below</p>
   <form action="{{next_url}}" method="post">
-   <table>
+   <table role="presentation">
    {% for i in range(1, (nbr_of_questions|int)+1) %}
     {% if i <= (page_nbr|int)*10 and i > ((page_nbr|int)-1)*10 %}
-     <tr><td align="right">{{ i }}.</td><td> <input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="this.form.submit()" /></tr>
+     <tr><td style="align:right;">{{ i }}.</td><td> <input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="this.form.submit()" /></tr>
     {% endif %}
    {% endfor %}
    </table>
@@ -19,44 +19,42 @@
    <input type="hidden" name="participant_id" value="{{participant_id}}" />
    <input type="hidden" name="page_nbr" value="{{page_nbr}}" />
   </form>
-  <table>
-   <tr>
-    {% if page_nbr|int > 1 %}
-     {% set prev_page_nbr = (page_nbr|int)-1 %}
-    {% else %}
-     {% set prev_page_nbr = (((nbr_of_questions|int)/10)|round(method="ceil"))|int %}
-    {% endif %}
-    <td>
-     <form action="{{next_url}}" method="post">
-      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
-      <input type="hidden" name="participant_id" value="{{participant_id}}" />
-      <input type="hidden" name="page_nbr" value="{{prev_page_nbr}}" />
-      <input type="submit" value="Previous" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
-     </form>
-    </td>
-    {% if page_nbr|int < (nbr_of_questions|int)/10 %}
-     {% set next_page_nbr = (page_nbr|int)+1 %}
-    {% else %}
-     {% set next_page_nbr = 1 %}
-    {% endif %}
-    <td>
-     <form action="{{next_url}}" method="post">
-      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
-      <input type="hidden" name="participant_id" value="{{participant_id}}" />
-      <input type="hidden" name="page_nbr" value="{{next_page_nbr}}" />
-      <input type="submit" value="Next" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
-     </form>
-    </td>
-    {% if page_nbr|int >= (nbr_of_questions|int)/10 %}
-    <td>
-     <form action="{{final_url}}" method="post">
-      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
-      <input type="hidden" name="participant_id" value="{{participant_id}}" />
-      <input type="submit" value="Finish" style="background-color:lightgreen; border-color:lightgreen; border-radius:5px; padding:4px;" />
-     </form>
-    </td>
-    {% endif %}
-   </tr>
-  </table>
+  <div>
+   {% if page_nbr|int > 1 %}
+    {% set prev_page_nbr = (page_nbr|int)-1 %}
+   {% else %}
+    {% set prev_page_nbr = (((nbr_of_questions|int)/10)|round(method="ceil"))|int %}
+   {% endif %}
+   <div style="float:left; margin:2px;">
+    <form action="{{next_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="hidden" name="page_nbr" value="{{prev_page_nbr}}" />
+     <input type="submit" value="Previous" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   {% if page_nbr|int < (nbr_of_questions|int)/10 %}
+    {% set next_page_nbr = (page_nbr|int)+1 %}
+   {% else %}
+    {% set next_page_nbr = 1 %}
+   {% endif %}
+   <div style="float:left; margin:2px;">
+    <form action="{{next_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="hidden" name="page_nbr" value="{{next_page_nbr}}" />
+     <input type="submit" value="Next" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   {% if page_nbr|int >= (nbr_of_questions|int)/10 %}
+   <div style="float:left; margin:2px;">
+    <form action="{{final_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="submit" value="Finish" style="background-color:lightgreen; border-color:lightgreen; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   {% endif %}
+  </div>
  </body>
 </html>
