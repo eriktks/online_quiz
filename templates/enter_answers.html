@@ -12,8 +12,8 @@
    {% for i in range(1, (nbr_of_questions|int)+1) %}
     {% if i <= (page_nbr|int)*10 and i > ((page_nbr|int)-1)*10 %}
      <div style="display:table-row;">
-      <div style="display:table-cell; align:right;">{{ i }}.</div>
-      <div style="display:table-cell; align:left;"><input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="this.form.submit()" /></div>
+      <div style="display:table-cell; text-align:right;">{{ i }}.</div>
+      <div style="display:table-cell; text-align:left;"><input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="this.form.submit()" /></div>
      </div>
     {% endif %}
    {% endfor %}
