@@ -5,24 +5,34 @@
  </head>
  <body>
   <p>Results of the quiz {{quiz_name}}</p>
-  <table style="border-spacing:5px;" role="presentation">
-   <tr><th scope="column"></th><th scope="column" style="text-align:left;">Name</th><th scope="column">Status</th><th scope="column">Answered</th><th scope="column">Checked</th><th scope="column">Solos</th><th scope="column">Correct</th><th scope="column">Checker</th><tr>
-  {% for key in results %}
-   {% set background_color = "white" %}
-   {% if results[key]["participant_name"] == participant_name %}
-    {% set background_color = "yellow" %}
-   {% endif %}
-   <tr style="background-color:{{background_color}};"><td style="text-align:right;">{{ loop.index }}.</td>
-    <td style="text-align:left;"> {{results[key]["participant_name"]}} </td>
-    <td style="text-align:center;"> {{results[key]["status"]}} </td>
-    <td style="text-align:center;"> {{ results[key]["answers_given"] }} </td>
-    <td style="text-align:center;"> {{ results[key]["answers_checked"] }} </td>
-    <td style="text-align:center;"> {{ results[key]["solos"]|length }} </td>
-    <td style="text-align:center;"> {{ results[key]["correct_answers"] }} </td>
-    <td style="text-align:left;"> {{ results[key]["checker"] }} </td>
-   </tr>
-  {% endfor %}
-  </table>
+  <div style="display:table; border-spacing:5px;">
+   <div style="display:table-row;">
+    <div style="display:table-cell; font-weight:bold; text-align:right;"></div>
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Name</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Status</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Answered</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Checked</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Solos</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Correct</div>
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Checker</div>
+   </div>
+   {% for key in results %}
+    {% set background_color = "white" %}
+    {% if results[key]["participant_name"] == participant_name %}
+     {% set background_color = "yellow" %}
+    {% endif %}
+   <div style="display:table-row; background-color:{{background_color}};">
+    <div style="display:table-cell; text-align:right;">{{ loop.index }}.</div>
+    <div style="display:table-cell; text-align:left;">{{ results[key]["participant_name"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["status"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["answers_given"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["answers_checked"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["solos"]|length }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["correct_answers"] }}</div>
+    <div style="display:table-cell; text-align:left;">{{ results[key]["checker"] }}</div>
+   </div>
+   {% endfor %}
+  </div>
   <div>
    <div style="float:left; margin:2px;">
     <form action="{{this_url}}" method="post">

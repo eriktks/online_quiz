@@ -25,19 +25,22 @@
    <input type="submit" value="Change name" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
   </form>
   <p>Wait for the quiz master to give the sign to start the quiz</p>
-  <table role="presentation">
-  <tr><th scope="column" style="text-align:left;">Name</th><th scope="column">Status</th></tr>
-  {% for key in results %}
-   {% set background_color = "white" %}
-   {% if results[key]["participant_name"] == participant_name %}
-    {% set background_color = "yellow" %}
-   {% endif %}
-   <tr style="background-color:{{background_color}};">
-    <td> {{results[key]["participant_name"]}} </td>
-    <td style="text-align:left;"> {{results[key]["status"]}} </td>
-   </tr>
+  <div style="display:table; border-spacing:5px;">
+   <div style="display:table-row;">
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Name</div>
+    <div style="display:table-cell; font-weight:bold;">Status</div>
+   </div>
+   {% for key in results %}
+    {% set background_color = "white" %}
+    {% if results[key]["participant_name"] == participant_name %}
+     {% set background_color = "yellow" %}
+    {% endif %}
+   <div style="display:table-row; background-color:{{background_color}};">
+    <div style="display:table-cell;"> {{results[key]["participant_name"]}} </div>
+    <div style="display:table-cell; text-align:left;"> {{results[key]["status"]}} </div>
+   </div>
   {% endfor %}
-  </table>
+  </div>
   <div>
    <div style="float:left; margin:2px;">
     <form action="{{this_url}}" method="post">

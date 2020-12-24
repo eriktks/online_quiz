@@ -11,38 +11,39 @@
    <p>{{participant_name}}'s answers</p>
   {% endif %}
   <form action="{{next_url}}" method="post">
-   <table role="presentation">
+   <div style="display:table; border-spacing:5px;">
    {% for i in range(1, (nbr_of_questions|int)+1) %}
     {% if i <= (page_nbr|int)*10 and i > ((page_nbr|int)-1)*10 %}
-     <tr>
-      <td> {{ check_counts[i|string()] }} &nbsp; </td>
+     <div style="display:table-row;">
+      <div style="display:table-cell;"> {{ check_counts[i|string()] }} &nbsp; </div>
       {% if checks[i|string()] == "correct" %}
-      <td style="background-color:lightgreen;">
-      <label for="correct">+</label>
-      <input type="radio" name="{{ i }}" value="correct" onchange="this.form.submit()" checked="checeked" /> 
-      </td>
+      <div style="display:table-cell; text-align:left; background-color:lightgreen;">
+       <label for="correct">+</label>
+       <input type="radio" name="{{ i }}" value="correct" onchange="this.form.submit()" checked="checeked" /> 
+      </div>
       {% else %}
-      <td style="background-color:white;">
-      <label for="correct">+</label>
-      <input type="radio" name="{{ i }}" value="correct" onchange="this.form.submit()" /> 
-      </td>
+      <div style="display:table-cell; text-align:left; background-color:white;">
+       <label for="correct">+</label>
+       <input type="radio" name="{{ i }}" value="correct" onchange="this.form.submit()" /> 
+      </div>
       {% endif %}
       {% if checks[i|string()] == "wrong" %}
-      <td style="background-color:pink;">
-      <input type="radio" name="{{ i }}" value="wrong" onchange="this.form.submit()" checked="checked" /> 
-      <label for="wrong">-</label>
-      </td>
+      <div style="display:table-cell; text-align:left; background-color:pink;">
+       <input type="radio" name="{{ i }}" value="wrong" onchange="this.form.submit()" checked="checked" /> 
+       <label for="wrong">-</label>
+      </div>
       {% else %}
-      <td style="background-color:white;">
-      <input type="radio" name="{{ i }}" value="wrong" onchange="this.form.submit()" /> 
-      <label for="wrong">-</label>
-      </td>
+      <div style="display:table-cell; text-align:left; background-color:white;">
+       <input type="radio" name="{{ i }}" value="wrong" onchange="this.form.submit()" /> 
+       <label for="wrong">-</label>
+      </div>
       {% endif %}
-      <td style="text-align:right;">{{ i }}.</td><td> {{ answers[i|string()] }}
-     </tr>
+      <div style="display:table-cell; text-align:right;">{{ i }}.</div>
+      <div style="display:table-cell; text-align:left;"> {{ answers[i|string()] }}</div>
+     </div>
     {% endif %}
    {% endfor %}
-   </table>
+   </div>
    <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
    <input type="hidden" name="participant_id" value="{{participant_id}}" />
    <input type="hidden" name="participant_id_check" value="{{participant_id_check}}" />
@@ -104,19 +105,33 @@
    <div style="clear:both" />
   </div>
   <br/>
-  <div style="font-size:0.7em">
-  <table style="border-spacing:0px;" role="presentation">
-   <tr><th scope="column"></th><th scope="column" style="text-align:left;">Name</th><th scope="column">Status</th><th scope="column">Answered</th><th scope="column">Checked</th><th scope="column">Correct</th><th scope="column">Checker</th><tr>
-  {% for key in results %}
-   <tr><td style="text-align:right;">{{ loop.index }}.</td>
-   <td style="text-align:left;"> {{ results[key]["participant_name"] }} </td>
-   <td style="text-align:center;"> {{ results[key]["status"] }} </td>
-   <td style="text-align:center;"> {{ results[key]["answers_given"] }} </td>
-   <td style="text-align:center;"> {{ results[key]["answers_checked"] }} </td>
-   <td style="text-align:center;"> {{ results[key]["correct_answers"] }} </td>
-   <td style="text-align:left;"> {{ results[key]["checker"] }} </td>
-  {% endfor %}
-  </table>
+  <div style="display:table; border-spacing:2px; font-size:0.7em">
+   <div style="display:table-row;">
+    <div style="display:table-cell; font-weight:bold; text-align:right;"></div>
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Name</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Status</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Answered</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Checked</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Solos</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Correct</div>
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Checker</div>
+   </div>
+   {% for key in results %}
+    {% set background_color = "white" %}
+    {% if results[key]["participant_name"] == participant_name %}
+     {% set background_color = "yellow" %}
+    {% endif %}
+   <div style="display:table-row; background-color:{{background_color}};">
+    <div style="display:table-cell; text-align:right;">{{ loop.index }}.</div>
+    <div style="display:table-cell; text-align:left;">{{ results[key]["participant_name"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["status"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["answers_given"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["answers_checked"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["solos"]|length }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["correct_answers"] }}</div>
+    <div style="display:table-cell; text-align:left;">{{ results[key]["checker"] }}</div>
+   </div>
+   {% endfor %}
   </div>
  </body>
 </html>

@@ -8,13 +8,16 @@
   <p>Name: {{participant_name}}</p>
   <p>Enter your answers below</p>
   <form action="{{next_url}}" method="post">
-   <table role="presentation">
+   <div style="display:table; border-spacing:5px;">
    {% for i in range(1, (nbr_of_questions|int)+1) %}
     {% if i <= (page_nbr|int)*10 and i > ((page_nbr|int)-1)*10 %}
-     <tr><td style="align:right;">{{ i }}.</td><td> <input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="this.form.submit()" /></tr>
+     <div style="display:table-row;">
+      <div style="display:table-cell; align:right;">{{ i }}.</div>
+      <div style="display:table-cell; align:left;"><input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="this.form.submit()" /></div>
+     </div>
     {% endif %}
    {% endfor %}
-   </table>
+   </div>
    <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
    <input type="hidden" name="participant_id" value="{{participant_id}}" />
    <input type="hidden" name="page_nbr" value="{{page_nbr}}" />
