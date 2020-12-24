@@ -1,0 +1,28 @@
+  <div style="display:table;">
+   <div style="display:table-row;">
+    <div style="display:table-cell; font-weight:bold; text-align:right;"></div>
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Name</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Status</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Answered</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Checked</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Solos</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Correct</div>
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Checker</div>
+   </div>
+   {% for key in results %}
+    {% set background_color = "white" %}
+    {% if results[key]["participant_name"] == participant_name %}
+     {% set background_color = "yellow" %}
+    {% endif %}
+   <div style="display:table-row; background-color:{{background_color}};">
+    <div style="display:table-cell; text-align:right;">{{ loop.index }}.</div>
+    <div style="display:table-cell; text-align:left;">{{ results[key]["participant_name"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["status"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["answers_given"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["answers_checked"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["solos"]|length }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["correct_answers"] }}</div>
+    <div style="display:table-cell; text-align:left;">{{ results[key]["checker"] }}</div>
+   </div>
+   {% endfor %}
+  </div>
