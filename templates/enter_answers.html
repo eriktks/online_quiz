@@ -2,6 +2,15 @@
 <html lang="en">
  <head>
   <title>Enter answers</title>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script type="text/javascript">
+   function ajax_submit(quiz_id, participant_id, question_id, answer_string) {
+    $.ajax({type: "POST",
+            url: "/cgi-bin/online_quiz/ajax_submit_answer",
+            data: { quiz_id: quiz_id, participant_id: participant_id, question_id: question_id, answer_string: answer_string }
+           });
+   };
+  </script>
  </head>
  <body>
   <noscript><span style="color:red;">JAVASCRIPT NOT ENABLED. ANSWERS MAY NOT BE SAVED!!</span><hr></noscript>
@@ -13,7 +22,7 @@
     {% if i <= (page_nbr|int)*10 and i > ((page_nbr|int)-1)*10 %}
      <div style="display:table-row;">
       <div style="display:table-cell; text-align:right;">{{ i }}.</div>
-      <div style="display:table-cell; text-align:left;"><input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="this.form.submit()" /></div>
+      <div style="display:table-cell; text-align:left;"><input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="ajax_submit({{ quiz_id}}, {{ participant_id }}, {{ i }}, $(this).val())" /></div>
      </div>
     {% endif %}
    {% endfor %}

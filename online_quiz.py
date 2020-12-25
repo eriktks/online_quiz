@@ -394,7 +394,10 @@ def start_quiz():
                 raise ValueError(error_text)
             participant_name = get_participant_details(participant_id)
             quiz_name, quiz_date, results = read_results(quiz_id)
-            return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=request.host_url[0:len(request.host_url)-1]+BASE_URL+PARTICIPATE, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
+            participate_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+PARTICIPATE
+            open_answering_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+OPEN_ANSWERING
+            open_checking_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+OPEN_CHECKING
+            return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=participate_url, open_answering_url=open_answering_url, open_checking_url=open_checking_url, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
     except Exception as e:
         error_text += ERROR+" (start_quiz): "+str(e)
     return(render_template("start_quiz"+HTML_SUFFIX, next_url=BASE_URL, error_text=error_text))
@@ -601,3 +604,15 @@ def open_answering():
 
 def back():
     return(render_template(BACK+HTML_SUFFIX))
+
+
+@app.route("/ajax_submit_answer", methods=["GET", "POST"])
+def ajax_submit_answer():
+    quiz_id = request.form["quiz_id"]
+    participant_id = request.form["participant_id"]
+    question_id = request.form["question_id"]
+    answer_string = request.form["answer_string"]
+    ip_address = request.remote_addr
+    write_log([ANSWER, quiz_id, ip_address, participant_id, question_id, answer_string])
+    return()
+
