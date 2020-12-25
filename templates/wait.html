@@ -49,13 +49,13 @@
      <input type="submit" value="Update" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
     </form>
    </div>
-   {% if participate_url != "" %}
+   {% if participate_url is defined and participate_url != "" %}
    <div style="float:left; margin:2px;">
     <input type="hidden" name="quiz_url" id="quiz_url" value="{{participate_url}}?quiz_id={{quiz_id}}" />
     <button onclick="copyText()" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;">Copy quiz address</button>
    </div>
    {% endif %}
-   {% if open_answering_url != "" %}
+   {% if open_answering_url is defined and open_answering_url != "" %}
    <div style="float:left; margin:2px;">
     <form action="{{open_answering_url}}" method="post">
      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
@@ -64,7 +64,7 @@
     </form>
    </div>
    {% endif %}
-   {% if open_checking_url != "" %}
+   {% if open_checking_url is defined and open_checking_url != "" %}
    <div style="float:left; margin:2px;">
      <form action="{{open_checking_url}}" method="post">
      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
