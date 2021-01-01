@@ -3,13 +3,12 @@
 # usage: online_quiz.py (from cgi-bin directory)
 # 20201211 erikt(at)xs4all.nl
 
-import csrf
 import csv
 import datetime
 from flask import Flask, Response
 from flask import render_template
 from flask import request
-from flask_wtf.csrf import CSRFProtect
+# from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 import locale
 from math import log
@@ -17,7 +16,6 @@ import os
 from random import shuffle
 import re
 import secrets
-import sys
 
 locale.setlocale(category=locale.LC_ALL, locale="en_US.UTF-8")
 
@@ -52,7 +50,7 @@ OPEN_ANSWERING = "open_answering"
 load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-csrf = CSRFProtect()
+# csrf = CSRFProtect()
 # csrf.init_app(app)
 
 
@@ -76,12 +74,12 @@ def get_current_quiz_id():
                 quiz_id = ""
                 quiz_name = ""
                 nbr_of_questions = ""
-        close(infile)
+        infile.close()
     except Exception:
-        pass
+        return(quiz_id, quiz_name, nbr_of_questions)
     return(quiz_id, quiz_name, nbr_of_questions)
 
- 
+
 def write_log(row_in):
     row_out = [datetime.datetime.now().strftime("%Y%m%d:%H:%M:%S")]
     row_out.extend(row_in)
@@ -320,7 +318,7 @@ def get_quiz_details(quiz_id):
             quiz_name = str(row[3])
             nbr_of_questions = str(row[4])
     infile.close()
-    if quiz_name == "" or nbr_of_questions == "": 
+    if quiz_name == "" or nbr_of_questions == "":
         error_text = f"unknown quiz: {quiz_id}"
     return(quiz_name, nbr_of_questions, error_text)
 
@@ -361,7 +359,7 @@ def is_quiz_host(quiz_id, participant_id, ip_address):
             ip_address_host = row[6]
     infile.close()
     return(participant_id == participant_id_host and ip_address == ip_address_host)
- 
+
 
 def get_checkee_id(quiz_id, participant_id):
     infile = open(DATA_DIR+LOG_FILE, "r")
@@ -406,7 +404,7 @@ def start_quiz():
 @app.route("/"+PARTICIPATE, methods=["GET","POST"])
 def participate():
     quiz_id = ""
-    if request.method == "GET" and "quiz_id" in request.args: 
+    if request.method == "GET" and "quiz_id" in request.args:
         quiz_id = request.args["quiz_id"]
     return(render_template(PARTICIPATE+HTML_SUFFIX, next_url=BASE_URL+WAIT,  home_url=BASE_URL, quiz_id=quiz_id))
 
