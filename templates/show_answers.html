@@ -4,20 +4,26 @@
   <title>Show answers</title>
  </head>
  <body>
-  <table>
+  <div style="display:table; border-spacing:5px;">
    {% for i in range(0, inverted_results|length) %}
-    <tr><td>{{ i+1 }}</td><td></td><td></td></tr>
+   <div style="display:table-row;">
+    <div style="display:table-cell; text-align:left;">{{ i+1 }}</div>
+    <div style="display:table-cell;"></div>
+    <div style="display:table-cell;"></div>
+   </div>
     {% for j in range(0, inverted_results[i]|length) %}
-      <tr><td>{{ inverted_results[i][j]["participant_name"] }}</td>
+     <div style="display:table-row;">
+      <div style="display:table-cell; text-align:left;">{{ inverted_results[i][j]["participant_name"] }}</div>
       {% if inverted_results[i][j]["check"] == "correct" %}
-       <td style="background-color:lightgreen">{{ inverted_results[i][j]["answer"] }}</td>
+       <div style="display:table-cell; text-align:left; background-color:lightgreen;">{{ inverted_results[i][j]["answer"] }}</div>
       {% else %}
-       <td>{{ inverted_results[i][j]["answer"] }}</td>
+       <div style="display:table-cell; text-align:left;">{{ inverted_results[i][j]["answer"] }}</div>
       {% endif %}
-      <td>{{ inverted_results[i][j]["checker"] }}</td></tr>
+      <div style="display:table-cell; text-align:left;">{{ inverted_results[i][j]["checker"] }}</div>
+     </div>
     {% endfor %}
    {% endfor %}
-  </table>
+  </div>
   <div style="float:left; margin:2px;">
    <form action="{{next_url}}" method="post">
     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
