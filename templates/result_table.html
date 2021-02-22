@@ -1,14 +1,17 @@
   <div style="display:table;">
    <div style="display:table-row;">
     <div style="display:table-cell; font-weight:bold; text-align:right;"></div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Correct</div>
     <div style="display:table-cell; font-weight:bold; text-align:left;">Name</div>
+    <div style="display:table-cell; font-weight:bold; text-align:center;">Solos</div>
     <div style="display:table-cell; font-weight:bold; text-align:center;">Status</div>
     <div style="display:table-cell; font-weight:bold; text-align:center;">Answered</div>
     <div style="display:table-cell; font-weight:bold; text-align:center;">Checked</div>
-    <div style="display:table-cell; font-weight:bold; text-align:center;">Solos</div>
-    <div style="display:table-cell; font-weight:bold; text-align:center;">Correct</div>
     <div style="display:table-cell; font-weight:bold; text-align:left;">Checker</div>
-   </div>
+    {% if open_checking_url|string() != ""  and checkee_id != "" %}
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Checks</div>
+    {% endif %}
+ </div>
    {% for key in results %}
     {% set background_color = "white" %}
     {% if results[key]["participant_name"] == participant_name %}
@@ -16,13 +19,26 @@
     {% endif %}
    <div style="display:table-row; background-color:{{background_color}};">
     <div style="display:table-cell; text-align:right;">{{ loop.index }}.</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["correct_answers"] }}</div>
     <div style="display:table-cell; text-align:left;">{{ results[key]["participant_name"] }}</div>
+    <div style="display:table-cell; text-align:center;">{{ results[key]["solos"]|length }}</div>
     <div style="display:table-cell; text-align:center;">{{ results[key]["status"] }}</div>
     <div style="display:table-cell; text-align:center;">{{ results[key]["answers_given"] }}</div>
     <div style="display:table-cell; text-align:center;">{{ results[key]["answers_checked"] }}</div>
-    <div style="display:table-cell; text-align:center;">{{ results[key]["solos"]|length }}</div>
-    <div style="display:table-cell; text-align:center;">{{ results[key]["correct_answers"] }}</div>
     <div style="display:table-cell; text-align:left;">{{ results[key]["checker"] }}</div>
+    {% if open_checking_url|string() != ""  and checkee_id != "" %}
+    <div style="display:table-cell; text-align:left;">
+     <div style="float:left; margin:2px;">
+      <form action="{{next_url}}" method="post">
+       <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+       <input type="hidden" name="participant_id" value="{{participant_id}}" />
+       <input type="hidden" name="participant_id_check" value="{{ key }}" />
+       <input type="hidden" name="page_nbr" value="1" />
+       <input type="submit" value="Check {{results[key]['participant_name'] }}" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
+      </form>
+     </div>
+    </div>
+    {% endif %}
    </div>
    {% endfor %}
   </div>

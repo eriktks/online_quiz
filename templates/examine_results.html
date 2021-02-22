@@ -21,29 +21,62 @@
      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
      <input type="hidden" name="participant_id" value="{{participant_id}}" />
      <input type="hidden" name="page_nbr" value="1" />
-     <input type="hidden" name="participant_id_check" value="{{participant_id}}" />
+     <input type="hidden" name="participant_id_check" value="own" />
      <input type="submit" value="Check own answers" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
     </form>
    </div>
    {% if checkee_id != "" %}
    <div style="float:left; margin:2px;">
+     <form action="{{this_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="hidden" name="approve" value="yes" />
+     <input type="hidden" name="page_nbr" value="1" />
+     <input type="submit" value="Approve own score" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   <div style="float:left; margin:2px;">
+    <form action="{{download_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="submit" value="Download own" style="background-color:white; border-color:white; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   <div style="float:left; margin:2px;">
+    <form action="{{download_all_url}}" method="post">
+     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+     <input type="hidden" name="participant_id" value="{{participant_id}}" />
+     <input type="submit" value="Download all" style="background-color:white; border-color:white; border-radius:5px; padding:4px;" />
+    </form>
+   </div>
+   <div style="float:left; margin:2px;">
      <form action="{{next_url}}" method="post">
      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
      <input type="hidden" name="participant_id" value="{{participant_id}}" />
-     <input type="hidden" name="participant_id_check" value="{{checkee_id}}" />
+     <input type="hidden" name="participant_id_check" value="" />
      <input type="hidden" name="page_nbr" value="1" />
      <input type="submit" value="Check other answers" style="background-color:lightgreen; border-color:lightgreen; border-radius:5px; padding:4px;" />
     </form>
    </div>
    {% endif %}
    {% if open_checking_url != "" %}
-   <div style="float:left; margin:2px;">
-     <form action="{{open_checking_url}}" method="post">
-     <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
-     <input type="hidden" name="participant_id" value="{{participant_id}}" />
-     <input type="submit" value="Open checking" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
-    </form>
-   </div>
+    {% if checkee_id == "" %}
+     <div style="float:left; margin:2px;">
+       <form action="{{open_checking_url}}" method="post">
+       <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+       <input type="hidden" name="participant_id" value="{{participant_id}}" />
+       <input type="submit" value="Open checking" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
+      </form>
+     </div>
+    {% else %}
+     <div style="float:left; margin:2px;">
+       <form action="show_answers" method="post">
+       <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+       <input type="hidden" name="participant_id" value="{{participant_id}}" />
+       <input type="submit" value="Show all answers" style="background-color:lightblue; border-color:lightblue; border-radius:5px; padding:4px;" />
+      </form>
+     </div>
+    {% endif %}
    {% endif %}
   </div>
  </body>
