@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <title>Show answers</title>
+ </head>
+ <body>
+  <table>
+   {% for i in range(0, inverted_results|length) %}
+    <tr><td>{{ i+1 }}</td><td></td><td></td></tr>
+    {% for j in range(0, inverted_results[i]|length) %}
+      <tr><td>{{ inverted_results[i][j]["participant_name"] }}</td>
+      {% if inverted_results[i][j]["check"] == "correct" %}
+       <td style="background-color:lightgreen">{{ inverted_results[i][j]["answer"] }}</td>
+      {% else %}
+       <td>{{ inverted_results[i][j]["answer"] }}</td>
+      {% endif %}
+      <td>{{ inverted_results[i][j]["checker"] }}</td></tr>
+    {% endfor %}
+   {% endfor %}
+  </table>
+  <div style="float:left; margin:2px;">
+   <form action="{{next_url}}" method="post">
+    <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
+    <input type="hidden" name="participant_id" value="{{participant_id}}" />
+    <input type="submit" value="Back" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
+   </form>
+  </div>
+ </body>
+</html>
