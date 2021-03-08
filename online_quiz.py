@@ -5,22 +5,29 @@
 
 import csv
 import datetime
+import time
+import sys
+import os
+
+if "PYTHONPATH" in os.environ:
+    for path in os.environ["PYTHONPATH"].split(":"):
+        sys.path.append(path)
+
 from flask import Flask, Response
 from flask import render_template
 from flask import request
-# from flask_wtf.csrf import CSRFProtect
-from dotenv import load_dotenv
 import locale
 from math import log
-import os
 from random import shuffle
 import re
-import secrets
+from random import randint
+
 
 locale.setlocale(category=locale.LC_ALL, locale="en_US.UTF-8")
 
+
 BASE_URL = "/cgi-bin/online_quiz/"
-DATA_DIR = "/home/cloud/software/online_quiz/"
+DATA_DIR = "/usr/local/WWW/A/t/tjongkim/software/online_quiz/"
 LOG_FILE = "logfile.csv"
 PARTICIPATE = "participate"
 WAIT = "wait"
@@ -48,14 +55,19 @@ HTML_SUFFIX = ".html"
 BACK = "back"
 OPEN_CHECKING = "open_checking"
 OPEN_ANSWERING = "open_answering"
+DATE_FORMAT = "%Y%m%d:%H:%M:%S"
 
-load_dotenv()
+
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+dot_env_file = open(DATA_DIR+".env", "r")
+for line in dot_env_file:
+    if re.search("^SECRET_KEY", line):
+        app.config['SECRET_KEY'] = line.split('"')[1]
+dot_env_file.close()
 
 
 def get_random_number():
-    return(MIN_RAND_NBR+secrets.randbelow(1+MAX_RAND_NBR-MIN_RAND_NBR))
+    return(MIN_RAND_NBR+randint(0, 1+MAX_RAND_NBR-MIN_RAND_NBR))
 
 
 def get_current_quiz_id():
@@ -218,6 +230,10 @@ def read_results_from_logfile(quiz_id):
                 results[key]["time"][STARTED] = row[0]
             if status == FINISHED:
                 results[key]["time"][FINISHED] = row[0]
+                time_diff = datetime.datetime.strptime(results[key]["time"][FINISHED], DATE_FORMAT) - datetime.datetime.strptime(results[key]["time"][STARTED], DATE_FORMAT)
+                hours, minutes, seconds = str(time_diff).split(":")
+                minutes = int(minutes) + 60*int(hours)
+                results[key]["status"] += " ({0}:{1})".format(minutes, seconds)
         elif row[1] == CHECKER:
             checker = str(row[3])
             checkee = str(row[4])
@@ -255,8 +271,12 @@ def read_results(quiz_id):
     quiz_name, quiz_date, results = read_results_from_logfile(quiz_id)
     results = add_answers_given_to_results(results)
     results = add_solos_to_results(results)
-    results = { p:results[p] for p in sorted(results, key=lambda p:(-results[p]["correct_answers"], results[p]["answers_checked"], -len(results[p]["solos"]), -results[p]["answers_given"], results[p]["participant_name"])) }
-    return(quiz_name, quiz_date, results)
+    results_list = []
+    for key in results:
+        results[key]["participant_id"] = key
+        results_list.append(results[key])
+    results_list = [ result for result in sorted(results_list, key=lambda result:(-result["correct_answers"], result["answers_checked"], -len(result["solos"]), -result["answers_given"], result["participant_name"])) ]
+    return(quiz_name, quiz_date, results_list)
 
 
 def read_status(quiz_id, ip_address, participant_id):
@@ -286,11 +306,11 @@ def make_quiz_result_text(quiz_id, participant_id):
     checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id)
     quiz_name, quiz_date, results = read_results(quiz_id)
     rank = [i+1 for i in range(0,len(results)) if list(results.keys())[i] == participant_id][0]
-    text = f"{quiz_name} (date: {quiz_date}; {len(results)} participants; {nbr_of_questions} questions)\n\n"
-    text += f"Name:  {participant_name}\n"
-    text += f"Rank:  {rank}\n"
-    text += f"Score: {results[participant_id]['correct_answers']}\n"
-    text += f"Solos: {len(results[participant_id]['solos'])}\n\n"
+    text = "{0} (date: {1}; {2} participants; {3} questions)\n\n".format(quiz_name, quiz_date, len(results), nbr_of_questions)
+    text += "Name:  {0}\n".format(participant_name)
+    text += "Rank:  {0}\n".format(rank)
+    text += "Score: {0}\n".format(results[participant_id]['correct_answers'])
+    text += "Solos: {0}\n\n".format(len(results[participant_id]['solos']))
     max_len_question_id = 1+int(log(int(nbr_of_questions), 10))
     max_len_check_counts = find_max_len_check_counts(check_counts)
     for i in range(1,int(nbr_of_questions)+1):
@@ -298,12 +318,12 @@ def make_quiz_result_text(quiz_id, participant_id):
         if len(results[participant_id]["solos"]) > 0:
             if question_nbr in results[participant_id]["solos"]: text += "SOLO "
             else: text += "     "
-        text += f"{check_counts[question_nbr].rjust(max_len_check_counts)} "
+        text += "{0} ".format(check_counts[question_nbr].rjust(max_len_check_counts))
         if not question_nbr in results[participant_id]["checks"]: check = "?"
         elif results[participant_id]["checks"][question_nbr] == "correct": check = "+"
         elif results[participant_id]["checks"][question_nbr] == "wrong": check = "-"
         else: check = "?"
-        text += f"{check} {str(i).rjust(max_len_question_id)}. "
+        text += "{check} {0}. ".format(str(i).rjust(max_len_question_id))
         if question_nbr in results[participant_id]["answers"]:
             text += results[participant_id]["answers"][question_nbr]
         text += "\n"
@@ -351,7 +371,7 @@ def get_quiz_details(quiz_id):
             nbr_of_questions = str(row[4])
     infile.close()
     if quiz_name == "" or nbr_of_questions == "":
-        error_text = f"unknown quiz: {quiz_id}"
+        error_text = "unknown quiz: {0}".format(quiz_id)
     return(quiz_name, nbr_of_questions, error_text)
 
 
@@ -477,7 +497,7 @@ def wait():
             open_checking_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+OPEN_CHECKING
         return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=participate_url, open_answering_url=open_answering_url, open_checking_url=open_checking_url, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
     except Exception as e:
-        error_text = ERROR+f" ({WAIT}): "+str(e)
+        error_text = ERROR+" ({0}): ".format(WAIT)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -516,7 +536,7 @@ def enter_answers():
             return(back())
         return(render_template("enter_answers"+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status))
     except Exception as e:
-        error_text = ERROR+f" ({ENTER_ANSWERS}): "+str(e)
+        error_text = ERROR+" ({0}): ".format(ENTER_ANSWERS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -547,8 +567,17 @@ def examine_results():
             checkee_id = "other"
         return(render_template(EXAMINE_RESULTS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, this_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, download_all_url=BASE_URL+DOWNLOAD_ALL, open_checking_url=open_checking_url, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, results=results, quiz_name=quiz_name, checkee_id=checkee_id))
     except Exception as e:
-        error_text += ERROR+f" ({EXAMINE_RESULTS}): "+str(e)
+        error_text += ERROR+" ({0}): ".format(EXAMINE_RESULTS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
+
+
+def anonymize_id(quiz_id, participant_id, participant_id_check):
+    ip_address = request.remote_addr
+    if participant_id_check == participant_id:
+        return(participant_id)
+    if is_quiz_host(quiz_id, participant_id, ip_address):
+        return(participant_id_check)
+    return("")
 
 
 @app.route("/"+CHECK_ANSWERS, methods=["POST"])
@@ -559,7 +588,7 @@ def check_answers():
         page_nbr = request.form["page_nbr"]
         participant_id = request.form["participant_id"]
         ip_address = request.remote_addr
-        if request.form["participant_id_check"] == "own":
+        if request.form["participant_id_check"] == participant_id:
             participant_id_check = participant_id
         elif request.form["participant_id_check"] == "":
             participant_id_check = get_checkee_id(quiz_id, participant_id)
@@ -578,17 +607,18 @@ def check_answers():
             status = CHECKING
         answers = read_answers_no_ip(quiz_id, nbr_of_questions, participant_id_check)
         checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
-        for key in request.form:
-            key = str(key)
-            check = str(request.form[key]).strip()
-            if re.search("^[0-9]+$",key) and key in checks and check != checks[key] and participant_id != participant_id_check:
-                write_log([CHECK, quiz_id, participant_id_check, participant_id, key, check])
-                checks[key] = check
+        if participant_id != participant_id_check or is_quiz_host(quiz_id, participant_id, ip_address):
+            for key in request.form:
+                key = str(key)
+                check = str(request.form[key]).strip()
+                if re.search("^[0-9]+$",key) and key in checks and check != checks[key]:
+                    write_log([CHECK, quiz_id, participant_id_check, participant_id, key, check])
+                    checks[key] = check
         quiz_name, quiz_date, results = read_results(quiz_id)
         checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
-        return(render_template(CHECK_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=participant_id_check, participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=results, check_counts=check_counts))
+        return(render_template(CHECK_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=anonymize_id(quiz_id, participant_id, participant_id_check), participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=results, check_counts=check_counts))
     except Exception as e:
-        error_text = ERROR+f" ({CHECK_ANSWERS}): "+str(e)
+        error_text = ERROR+" ({0}): ".format(CHECK_ANSWERS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -599,9 +629,9 @@ def download():
         quiz_id = request.form["quiz_id"]
         participant_id = request.form["participant_id"]
         text, filename = make_quiz_result_text(quiz_id, participant_id)
-        return(Response(text, mimetype="text/plain", headers={"Content-disposition": f"attachment; filename={filename}.txt"}))
+        return(Response(text, mimetype="text/plain", headers={"Content-disposition": "attachment; filename={0}.txt".format(filename)}))
     except Exception as e:
-        error_text += ERROR+f" ({DOWNLOAD}): "+str(e)
+        error_text += ERROR+" ({0}): ".format(DOWNLOAD)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -612,9 +642,9 @@ def download_all():
         quiz_id = request.form["quiz_id"]
         participant_id = request.form["participant_id"]
         text, filename = make_quiz_result_text_all(quiz_id)
-        return(Response(text, mimetype="text/plain", headers={"Content-disposition": f"attachment; filename={filename}.csv"}))
+        return(Response(text, mimetype="text/plain", headers={"Content-disposition": "attachment; filename={0}.csv".format(filename)}))
     except Exception as e:
-        error_text += ERROR+f" ({DOWNLOAD_ALL}): "+str(e)
+        error_text += ERROR+" ({0}): ".format(DOWNLOAD_ALL)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -663,7 +693,7 @@ def open_checking():
                 write_log([CHECKER, quiz_id, checker, checkee])
         return(examine_results())
     except Exception as e:
-        error_text = ERROR+f" ({OPEN_CHECKING}): "+str(e)
+        error_text = ERROR+" ({0}): ".format(OPEN_CHECKING)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -678,7 +708,7 @@ def open_answering():
             write_log([ANSWER, quiz_id, ip_address, participant_id, "1", ""])
         return(wait())
     except Exception as e:
-        error_text = ERROR+f" ({OPEN_ANSWERING}): "+str(e)
+        error_text = ERROR+" ({0}): ".format(OPEN_ANSWERING)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
