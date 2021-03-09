@@ -716,7 +716,7 @@ def back():
     return(render_template(BACK+HTML_SUFFIX))
 
 
-@app.route("/ajax_submit_answer", methods=["GET", "POST"])
+@app.route("/ajax_submit_answer", methods=["POST"])
 def ajax_submit_answer():
     quiz_id = request.form["quiz_id"]
     participant_id = request.form["participant_id"]
