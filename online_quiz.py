@@ -323,7 +323,7 @@ def make_quiz_result_text(quiz_id, participant_id):
         elif results[participant_id]["checks"][question_nbr] == "correct": check = "+"
         elif results[participant_id]["checks"][question_nbr] == "wrong": check = "-"
         else: check = "?"
-        text += "{check} {0}. ".format(str(i).rjust(max_len_question_id))
+        text += "{0} {1}. ".format(check, str(i).rjust(max_len_question_id))
         if question_nbr in results[participant_id]["answers"]:
             text += results[participant_id]["answers"][question_nbr]
         text += "\n"
