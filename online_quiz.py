@@ -27,7 +27,7 @@ locale.setlocale(category=locale.LC_ALL, locale="en_US.UTF-8")
 
 
 BASE_URL = "/cgi-bin/online_quiz/"
-DATA_DIR = "/usr/local/WWW/A/t/tjongkim/software/online_quiz/"
+DATA_DIR = "/usr/local/WWW/A/t/tjongkim/private/online_quiz/quizzes/"
 LOG_FILE = "logfile.csv"
 PARTICIPATE = "participate"
 WAIT = "wait"
@@ -70,32 +70,13 @@ def get_random_number():
     return(MIN_RAND_NBR+randint(0, 1+MAX_RAND_NBR-MIN_RAND_NBR))
 
 
-def get_current_quiz_id():
-    quiz_id = ""
-    quiz_name = ""
-    nbr_of_questions = ""
-    try:
-        infile = open(DATA_DIR+LOG_FILE, "r")
-        csvreader = csv.reader(infile)
-        for row in csvreader:
-            if row[1] == START_QUIZ:
-                quiz_id = row[2]
-                quiz_name = row[3]
-                nbr_of_questions = row[4]
-            elif row[1] == END_QUIZ:
-                quiz_id = ""
-                quiz_name = ""
-                nbr_of_questions = ""
-        infile.close()
-    except Exception:
-        return(quiz_id, quiz_name, nbr_of_questions)
-    return(quiz_id, quiz_name, nbr_of_questions)
-
-
-def write_log(row_in):
+def write_log(row_in, quiz_id, participant_id=None):
     row_out = [datetime.datetime.now().strftime("%Y%m%d:%H:%M:%S")]
     row_out.extend(row_in)
-    outfile = open(DATA_DIR+LOG_FILE, "a")
+    if participant_id == None:
+        outfile = open(DATA_DIR+quiz_id+"/"+LOG_FILE, "a")
+    else:
+        outfile = open(DATA_DIR+quiz_id+"/"+participant_id, "a")
     csvwriter = csv.writer(outfile)
     csvwriter.writerow(row_out)
     outfile.close()
@@ -116,18 +97,19 @@ def start_new_quiz(request_form):
         quiz_id = str(get_random_number())
         participant_id = str(get_random_number())
         ip_address = request.remote_addr
-        write_log([START_QUIZ, quiz_id, quiz_name, int(nbr_of_questions), participant_id, ip_address])
-        write_log([PARTICIPANT, quiz_id, ip_address, participant_id, participant_name])
-        write_log([STATUS, quiz_id, ip_address, participant_id, WAITING])
+        os.mkdir(DATA_DIR+quiz_id)
+        write_log([START_QUIZ, quiz_id, quiz_name, int(nbr_of_questions), participant_id, ip_address], quiz_id)
+        write_log([PARTICIPANT, quiz_id, ip_address, participant_id, participant_name], quiz_id, participant_id=participant_id)
+        write_log([STATUS, quiz_id, ip_address, participant_id, WAITING], quiz_id, participant_id=participant_id)
         return(quiz_id, participant_id, "")
     except Exception as e:
-        error_text = ERROR+" (start_new_quiz): "+str(e)
+        error_text += ERROR+" (start_new_quiz): "+str(e)
     return("", "", error_text)
 
 
 def read_answers(quiz_id, nbr_of_questions, ip_address, participant_id):
     answers = { str(i):"" for i in range(1,int(nbr_of_questions)+1) }
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+LOG_FILE, "r")
     csvreader = csv.reader(infile)
     for row in csvreader:
         try:
@@ -141,7 +123,7 @@ def read_answers(quiz_id, nbr_of_questions, ip_address, participant_id):
 
 def read_answers_no_ip(quiz_id, nbr_of_questions, participant_id):
     answers = { str(i):"" for i in range(1,int(nbr_of_questions)+1) }
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+participant_id, "r")
     csvreader = csv.reader(infile)
     for row in csvreader:
         try:
@@ -169,20 +151,22 @@ def make_check_counts(checks, nbr_of_questions):
 def read_checks(quiz_id, nbr_of_questions, participant_id_check):
     checks_participant_empty = { str(i):"" for i in range(1,int(nbr_of_questions)+1) }
     checks = { participant_id_check: dict(checks_participant_empty) }
-    infile = open(DATA_DIR+LOG_FILE, "r")
-    csvreader = csv.reader(infile)
-    for row in csvreader:
-        try:
-            if row[1] == CHECK and str(row[2]) == quiz_id:
-                participant_id= str(row[3])
-                question_id = str(row[5])
-                check_status = str(row[6]).strip()
-                if participant_id not in checks:
-                    checks[participant_id] = dict(checks_participant_empty)
-                checks[participant_id][question_id] = check_status
-        except Exception:
-            pass
-    infile.close()
+    for file_name in os.listdir(DATA_DIR+quiz_id):
+        if re.search("^[0-9]+$", file_name):
+            infile = open(DATA_DIR+quiz_id+"/"+file_name, "r")
+            csvreader = csv.reader(infile)
+            for row in csvreader:
+                try:
+                    if row[1] == CHECK and str(row[2]) == quiz_id:
+                        participant_id = str(row[3])
+                        question_id = str(row[5])
+                        check_status = str(row[6]).strip()
+                        if participant_id not in checks:
+                            checks[participant_id] = dict(checks_participant_empty)
+                        checks[participant_id][question_id] = check_status
+                except Exception:
+                    pass
+            infile.close()
     check_counts = make_check_counts(checks, nbr_of_questions)
     return(checks[participant_id_check], check_counts)
 
@@ -191,56 +175,77 @@ def read_results_from_logfile(quiz_id):
     results = {}
     quiz_name = ""
     quiz_date = ""
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+LOG_FILE, "r")
     csvreader = csv.reader(infile)
     rows = []
     for row in csvreader:
         if str(row[2]) == quiz_id:
            rows.append(row)
+    infile.close()
     for row in rows:
         if row[1] == START_QUIZ:
             quiz_name = row[3]
             quiz_date = row[0][:8]
-        elif row[1] == PARTICIPANT:
-            participant_id = str(row[4])
-            participant_name = str(row[5])
-            key = " ".join([participant_id])
-            if key in results:
-                results[key]["participant_name"] = participant_name
-            else:
-                results[key] = { "checks": {}, "answers": {}, "status": "", "participant_name": participant_name, "participant_id": participant_id, "time": { STARTED: "", FINISHED: "" }  }
-        elif row[1] == ANSWER:
-            participant_id = str(row[4])
-            question_nbr = str(row[5])
-            answer = str(row[6]).strip()
-            key = " ".join([participant_id])
-            results[key]["answers"][question_nbr] = answer
-        elif row[1] == CHECK:
-            participant_id_check = str(row[3])
-            question_nbr = str(row[5])
-            check = str(row[6]).strip()
-            key = " ".join([participant_id_check])
-            results[key]["checks"][question_nbr] = check
-        elif row[1] == STATUS:
-            participant_id = str(row[4])
-            key = " ".join([participant_id])
-            status = row[5]
-            results[key]["status"] = status
-            if status == STARTED:
-                results[key]["time"][STARTED] = row[0]
-            if status == FINISHED:
-                results[key]["time"][FINISHED] = row[0]
-                time_diff = datetime.datetime.strptime(results[key]["time"][FINISHED], DATE_FORMAT) - datetime.datetime.strptime(results[key]["time"][STARTED], DATE_FORMAT)
-                hours, minutes, seconds = str(time_diff).split(":")
-                minutes = int(minutes) + 60*int(hours)
-                results[key]["status"] += " ({0}:{1})".format(minutes, seconds)
-        elif row[1] == CHECKER:
-            checker = str(row[3])
-            checkee = str(row[4])
-            results[checkee]["checker"] = results[checker]["participant_name"]
-    infile.close()
+    checkers = {}
+    for file_name in sorted(os.listdir(DATA_DIR+quiz_id), reverse=True):
+        if re.search("^[0-9]+$", file_name):
+            infile = open(DATA_DIR+quiz_id+"/"+file_name, "r")
+            csvreader = csv.reader(infile)
+            rows = []
+            for row in csvreader:
+                if str(row[2]) == quiz_id:
+                   rows.append(row)
+            infile.close()
+            for row in rows:
+                if row[1] == PARTICIPANT:
+                    participant_id = str(row[4])
+                    participant_name = str(row[5])
+                    key = " ".join([participant_id])
+                    if key in results:
+                        results[key]["participant_name"] = participant_name
+                    else:
+                        results[key] = { "checks": {}, "answers": {}, "status": "", "participant_name": participant_name, "participant_id": participant_id, "time": { STARTED: "", FINISHED: "" }  }
+                elif row[1] == ANSWER:
+                    participant_id = str(row[4])
+                    question_nbr = str(row[5])
+                    answer = str(row[6]).strip()
+                    key = " ".join([participant_id])
+                    results[key]["answers"][question_nbr] = answer
+                elif row[1] == CHECK:
+                    participant_id_check = str(row[3])
+                    question_nbr = str(row[5])
+                    check = str(row[6]).strip()
+                    key = " ".join([participant_id_check])
+                    results[key]["checks"][question_nbr] = check
+                elif row[1] == STATUS:
+                    participant_id = str(row[4])
+                    key = " ".join([participant_id])
+                    status = row[5]
+                    results[key]["status"] = status
+                    if status == STARTED:
+                        results[key]["time"][STARTED] = row[0]
+                    if status == FINISHED:
+                        results[key]["time"][FINISHED] = row[0]
+                        time_diff = datetime.datetime.strptime(results[key]["time"][FINISHED], DATE_FORMAT) - datetime.datetime.strptime(results[key]["time"][STARTED], DATE_FORMAT)
+                        hours, minutes, seconds = str(time_diff).split(":")
+                        minutes = int(minutes) + 60*int(hours)
+                        results[key]["status"] += " ({0}:{1})".format(minutes, seconds)
+                elif row[1] == CHECKER:
+                    checker = str(row[3])
+                    checkee = str(row[4])
+                    checkers[checker] = checkee
+    for checker in checkers:
+        checkee = checkers[checker]
+        results[checkee]["checker"] = results[checker]["participant_name"]
     return(quiz_name, quiz_date, results)
 
+
+def sort_results_list(results_list):
+    return([ result for result in sorted(results_list, key=lambda result:(-result["correct_answers"],
+                                                                          result["answers_checked"],
+                                                                          -len(result["solos"]),
+                                                                          -result["answers_given"],
+                                                                          result["participant_name"])) ])
 
 def add_answers_given_to_results(results):
     for participant in results:
@@ -267,21 +272,29 @@ def add_solos_to_results(results):
     return(results)
 
 
-def read_results(quiz_id):
+def read_results(quiz_id, error_text=""):
+    error_text += "R"
     quiz_name, quiz_date, results = read_results_from_logfile(quiz_id)
+    error_text += "R"
     results = add_answers_given_to_results(results)
     results = add_solos_to_results(results)
     results_list = []
+    error_text += "R"
     for key in results:
         results[key]["participant_id"] = key
         results_list.append(results[key])
-    results_list = [ result for result in sorted(results_list, key=lambda result:(-result["correct_answers"], result["answers_checked"], -len(result["solos"]), -result["answers_given"], result["participant_name"])) ]
-    return(quiz_name, quiz_date, results_list)
+    error_text += "R"
+    results_dict = { result["participant_id"]:result for result in sorted(results_list, key=lambda result:(-result["correct_answers"], 
+                                                                                                           result["answers_checked"], 
+                                                                                                           -len(result["solos"]), 
+                                                                                                           -result["answers_given"], 
+                                                                                                           result["participant_name"])) }
+    return(quiz_name, quiz_date, results_dict, error_text)
 
 
 def read_status(quiz_id, ip_address, participant_id):
     status = ""
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+participant_id, "r")
     csvreader = csv.reader(infile)
     for row in csvreader:
         if row[1] == STATUS and str(row[2]) == quiz_id and row[3] == ip_address and str(row[4]) == participant_id:
@@ -302,9 +315,9 @@ def make_quiz_result_text(quiz_id, participant_id):
     quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
     if len(error_text) > 0:
         raise ValueError(error_text)
-    participant_name = get_participant_details(participant_id)
+    participant_name = get_participant_details(quiz_id, participant_id)
     checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id)
-    quiz_name, quiz_date, results = read_results(quiz_id)
+    quiz_name, quiz_date, results, error_text = read_results(quiz_id)
     rank = [i+1 for i in range(0,len(results)) if list(results.keys())[i] == participant_id][0]
     text = "{0} (date: {1}; {2} participants; {3} questions)\n\n".format(quiz_name, quiz_date, len(results), nbr_of_questions)
     text += "Name:  {0}\n".format(participant_name)
@@ -335,7 +348,7 @@ def make_quiz_result_text_all(quiz_id):
     quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
     if len(error_text) > 0:
         raise ValueError(error_text)
-    quiz_name, quiz_date, results = read_results(quiz_id)
+    quiz_name, quiz_date, results, error_text = read_results(quiz_id)
     results_table = [["Name"]]
     for participant_id in results:
         results_table[-1].append(re.sub(",", "_", results[participant_id]["participant_name"]))
@@ -363,7 +376,7 @@ def get_quiz_details(quiz_id):
     quiz_name = ""
     nbr_of_questions = ""
     error_text = ""
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+LOG_FILE, "r")
     csvreader = csv.reader(infile)
     for row in csvreader:
         if row[1] == START_QUIZ and row[2] == quiz_id:
@@ -375,9 +388,9 @@ def get_quiz_details(quiz_id):
     return(quiz_name, nbr_of_questions, error_text)
 
 
-def get_participant_details(participant_id):
+def get_participant_details(quiz_id, participant_id):
     participant_name = ""
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+participant_id, "r")
     csvreader = csv.reader(infile)
     for row in csvreader:
         if row[1] == PARTICIPANT and row[4] == participant_id:
@@ -387,7 +400,7 @@ def get_participant_details(participant_id):
 
 def answering_started(quiz_id):
     return_value = False
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+LOG_FILE, "r")
     csvreader = csv.reader(infile)
     for row in csvreader:
         if row[1] == ANSWER and row[2] == quiz_id:
@@ -401,7 +414,7 @@ def answering_started(quiz_id):
 
 
 def is_quiz_host(quiz_id, participant_id, ip_address):
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+LOG_FILE, "r")
     csvreader = csv.reader(infile)
     participant_id_host = ""
     ip_address_host = ""
@@ -414,7 +427,7 @@ def is_quiz_host(quiz_id, participant_id, ip_address):
 
 
 def get_checkee_id(quiz_id, participant_id):
-    infile = open(DATA_DIR+LOG_FILE, "r")
+    infile = open(DATA_DIR+quiz_id+"/"+participant_id, "r")
     csvreader = csv.reader(infile)
     checkee_id = ""
     for row in csvreader:
@@ -442,12 +455,16 @@ def start_quiz():
             quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
             if len(error_text) > 0:
                 raise ValueError(error_text)
-            participant_name = get_participant_details(participant_id)
-            quiz_name, quiz_date, results = read_results(quiz_id)
+            error_text += "5"
+            participant_name = get_participant_details(quiz_id, participant_id)
+            error_text += "6"
+            quiz_name, quiz_date, results, error_text = read_results(quiz_id)
+            error_text += "7"
             participate_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+PARTICIPATE
             open_answering_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+OPEN_ANSWERING
             open_checking_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+OPEN_CHECKING
-            return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=participate_url, open_answering_url=open_answering_url, open_checking_url=open_checking_url, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
+            error_text += "8 "+str(results)
+            return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=participate_url, open_answering_url=open_answering_url, open_checking_url=open_checking_url, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=sort_results_list(results.values())))
     except Exception as e:
         error_text += ERROR+" (start_quiz): "+str(e)
     return(render_template("start_quiz"+HTML_SUFFIX, next_url=BASE_URL, error_text=error_text))
@@ -469,35 +486,54 @@ def wait():
         quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
         if len(error_text) > 0:
             raise ValueError(error_text)
-        quiz_name, quiz_date, results = read_results(quiz_id)
+        error_text += "B"
+        quiz_name, quiz_date, results, error_text = read_results(quiz_id)
+        error_text += "C"+str(results)
         ip_address = request.remote_addr
+        error_text += "D"
         if "participant_id" in request.form:
+            error_text += "2"
             participant_id = request.form["participant_id"]
+            error_text += "2"
         else:
+            error_text += "3"
             participant_id = str(get_random_number())
+            error_text += "3"
+        error_text += "1"
         if participant_id not in results:
+            error_text += "4"
             participant_name = str(request.form["participant_name"]).strip()
+            error_text += "4"
             if participant_name == "":
                 raise ValueError("empty participant name")
-            write_log([PARTICIPANT, quiz_id, ip_address, participant_id, participant_name])
-            write_log([STATUS, quiz_id, ip_address, participant_id, WAITING])
-        participant_name = get_participant_details(participant_id)
+            error_text += "4"
+            write_log([PARTICIPANT, quiz_id, ip_address, participant_id, participant_name], quiz_id, participant_id=participant_id)
+            error_text += "4"
+            write_log([STATUS, quiz_id, ip_address, participant_id, WAITING], quiz_id, participant_id=participant_id)
+            error_text += "4"
+        error_text += "1"
+        participant_name = get_participant_details(quiz_id, participant_id)
+        error_text += "1"
         if "participant_name_new" in request.form:
             participant_name_new = request.form["participant_name_new"]
             if participant_name_new != "" and participant_name_new != participant_name:
-                write_log([PARTICIPANT, quiz_id, request.remote_addr, participant_id, participant_name_new])
+                write_log([PARTICIPANT, quiz_id, request.remote_addr, participant_id, participant_name_new], quiz_id, participant_id=participant_id)
                 participant_name = participant_name_new
-        quiz_name, quiz_date, results = read_results(quiz_id)
+        error_text += "1"
+        quiz_name, quiz_date, results, error_text = read_results(quiz_id)
+        error_text += "1"
         participate_url = ""
         open_answering_url = ""
         open_checking_url = ""
+        error_text += "1"
         if is_quiz_host(quiz_id, participant_id, ip_address):
             participate_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+PARTICIPATE
             open_answering_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+OPEN_ANSWERING
             open_checking_url = request.host_url[0:len(request.host_url)-1]+BASE_URL+OPEN_CHECKING
-        return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=participate_url, open_answering_url=open_answering_url, open_checking_url=open_checking_url, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=results))
+        error_text += "1"
+        return(render_template(WAIT+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, this_url=BASE_URL+WAIT, participate_url=participate_url, open_answering_url=open_answering_url, open_checking_url=open_checking_url, quiz_id=quiz_id, quiz_name=quiz_name, participant_id=participant_id, participant_name=participant_name, results=sort_results_list(results.values())))
     except Exception as e:
-        error_text = ERROR+" ({0}): ".format(WAIT)+str(e)
+        error_text += ERROR+" ({0}): ".format(WAIT)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -511,14 +547,15 @@ def enter_answers():
         quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
         if len(error_text) > 0:
             raise ValueError(error_text)
-        participant_name = get_participant_details(participant_id)
+        participant_name = get_participant_details(quiz_id, participant_id)
         ip_address = request.remote_addr
         if not answering_started(quiz_id) and not is_quiz_host(quiz_id, participant_id, ip_address):
             return(wait())
         answers = read_answers(quiz_id, nbr_of_questions, ip_address, participant_id)
         status = read_status(quiz_id, ip_address, participant_id)
         if status == WAITING:
-            write_log([STATUS, quiz_id, request.remote_addr, participant_id, STARTED])
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, STARTED], quiz_id)
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, STARTED], quiz_id, participant_id=participant_id)
             status = STARTED
         if status != STARTED:
             return(examine_results())
@@ -528,7 +565,7 @@ def enter_answers():
             key = str(key)
             answer = request.form[key]
             if re.search("^[0-9]+$",key) and key in answers and answer != answers[key]:
-                write_log([ANSWER, quiz_id, ip_address, participant_id, key, answer])
+                write_log([ANSWER, quiz_id, ip_address, participant_id, key, answer], quiz_id, participant_id=participant_id)
                 answers[key] = answer
                 last_changed_key = key
                 answers_changed = True
@@ -536,7 +573,7 @@ def enter_answers():
             return(back())
         return(render_template("enter_answers"+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status))
     except Exception as e:
-        error_text = ERROR+" ({0}): ".format(ENTER_ANSWERS)+str(e)
+        error_text += ERROR+" ({0}): ".format(ENTER_ANSWERS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -549,23 +586,33 @@ def examine_results():
         quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
         if len(error_text) > 0:
             raise ValueError(error_text)
-        participant_name = get_participant_details(participant_id)
+        error_text += "A"
+        participant_name = get_participant_details(quiz_id, participant_id)
+        error_text += "A"
         ip_address = request.remote_addr
+        error_text += "A"
         status = read_status(quiz_id, ip_address, participant_id)
+        error_text += "A"
         if status == STARTED:
-            write_log([STATUS, quiz_id, request.remote_addr, participant_id, FINISHED])
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, FINISHED], quiz_id, participant_id=participant_id)
             status = FINISHED
+        error_text += "A"
         if "approve" in request.form:
-            write_log([STATUS, quiz_id, request.remote_addr, participant_id, APPROVED])
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, APPROVED], quiz_id, participant_id=participant_id)
             status = APPROVED
-        quiz_name, quiz_date, results = read_results(quiz_id)
+        error_text += "A:"+quiz_id
+        quiz_name, quiz_date, results, error_text = read_results(quiz_id, error_text=error_text)
+        error_text += "A"
         open_checking_url = ""
+        error_text += "A"
         if is_quiz_host(quiz_id, participant_id, ip_address):
             open_checking_url = BASE_URL+OPEN_CHECKING
+        error_text += "A"
         checkee_id = ""
         if get_checkee_id(quiz_id, participant_id) != "":
             checkee_id = "other"
-        return(render_template(EXAMINE_RESULTS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, this_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, download_all_url=BASE_URL+DOWNLOAD_ALL, open_checking_url=open_checking_url, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, results=results, quiz_name=quiz_name, checkee_id=checkee_id))
+        error_text += "A"
+        return(render_template(EXAMINE_RESULTS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, this_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, download_all_url=BASE_URL+DOWNLOAD_ALL, open_checking_url=open_checking_url, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, results=sort_results_list(results.values()), quiz_name=quiz_name, checkee_id=checkee_id))
     except Exception as e:
         error_text += ERROR+" ({0}): ".format(EXAMINE_RESULTS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
@@ -584,10 +631,15 @@ def anonymize_id(quiz_id, participant_id, participant_id_check):
 def check_answers():
     error_text = ""
     try:
+        error_text = "C"
         quiz_id = request.form["quiz_id"]
+        error_text = "C"
         page_nbr = request.form["page_nbr"]
+        error_text = "C"
         participant_id = request.form["participant_id"]
+        error_text = "C"
         ip_address = request.remote_addr
+        error_text = "C"
         if request.form["participant_id_check"] == participant_id:
             participant_id_check = participant_id
         elif request.form["participant_id_check"] == "":
@@ -596,29 +648,36 @@ def check_answers():
             participant_id_check = request.form["participant_id_check"]
         else:
             participant_id_check = participant_id
+        error_text = "C"
         quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
-        if len(error_text) > 0:
-            raise ValueError(error_text)
-        participant_name = get_participant_details(participant_id)
-        participant_name_check = get_participant_details(participant_id_check)
+        #if len(error_text) > 0:
+        #    raise ValueError(error_text)
+        error_text = "C"
+        participant_name = get_participant_details(quiz_id, participant_id)
+        participant_name_check = get_participant_details(quiz_id, participant_id_check)
         status = read_status(quiz_id, ip_address, participant_id)
+        error_text = "C"
         if status == FINISHED and participant_id_check != participant_id:
-            write_log([STATUS, quiz_id, request.remote_addr, participant_id, CHECKING])
+            write_log([STATUS, quiz_id, request.remote_addr, participant_id, CHECKING], quiz_id, participant_id=participant_id)
             status = CHECKING
+        error_text = "C"
         answers = read_answers_no_ip(quiz_id, nbr_of_questions, participant_id_check)
         checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
+        error_text = "C"
         if participant_id != participant_id_check or is_quiz_host(quiz_id, participant_id, ip_address):
             for key in request.form:
                 key = str(key)
                 check = str(request.form[key]).strip()
                 if re.search("^[0-9]+$",key) and key in checks and check != checks[key]:
-                    write_log([CHECK, quiz_id, participant_id_check, participant_id, key, check])
+                    write_log([CHECK, quiz_id, participant_id_check, participant_id, key, check], quiz_id, participant_id=participant_id_check)
                     checks[key] = check
-        quiz_name, quiz_date, results = read_results(quiz_id)
+        error_text = "C"
+        quiz_name, quiz_date, results, error_text = read_results(quiz_id)
         checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
-        return(render_template(CHECK_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=anonymize_id(quiz_id, participant_id, participant_id_check), participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=results, check_counts=check_counts))
+        error_text = "C"
+        return(render_template(CHECK_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=anonymize_id(quiz_id, participant_id, participant_id_check), participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=sort_results_list(results.values()), check_counts=check_counts))
     except Exception as e:
-        error_text = ERROR+" ({0}): ".format(CHECK_ANSWERS)+str(e)
+        error_text += ERROR+" ({0}): ".format(CHECK_ANSWERS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -657,7 +716,7 @@ def show_answers():
         ip_address = request.remote_addr
         results = {}
         if is_quiz_host(quiz_id, participant_id, ip_address):
-            quiz_name, quiz_date, results = read_results_from_logfile(quiz_id)
+            quiz_name, quiz_date, results, error_text = read_results_from_logfile(quiz_id)
         quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
         inverted_results = []
         for i in range(1, int(nbr_of_questions)+1):
@@ -667,7 +726,7 @@ def show_answers():
                     answers.append({"participant_name":results[key]["participant_name"], "answer":results[key]["answers"][str(i)], "checker":results[key]["checker"], "check":results[key]["checks"][str(i)]})
             answers = [answer for answer in sorted(answers, key=lambda answer: answer["answer"].lower())]
             inverted_results.append(answers)
-        return(render_template("show_answers"+HTML_SUFFIX, next_url=BASE_URL+EXAMINE_RESULTS, participant_id=participant_id, quiz_id=quiz_id, results=results, nbr_of_questions=nbr_of_questions, inverted_results=inverted_results))
+        return(render_template("show_answers"+HTML_SUFFIX, next_url=BASE_URL+EXAMINE_RESULTS, participant_id=participant_id, quiz_id=quiz_id, results=sort_results_list(results.values()), nbr_of_questions=nbr_of_questions, inverted_results=inverted_results))
     except Exception as e:
         error_text += ERROR+" (show_answers): "+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
@@ -677,23 +736,28 @@ def show_answers():
 def open_checking():
     error_text = ""
     try:
+        error_text += "x"
         quiz_id = request.form["quiz_id"]
+        error_text += "y"
         participant_id = request.form["participant_id"]
+        error_text += "z"
         ip_address = request.remote_addr
+        error_text += "a"
         if is_quiz_host(quiz_id, participant_id, ip_address):
-            quiz_name, quiz_date, results = read_results(quiz_id)
+            quiz_name, quiz_date, results, error_text = read_results(quiz_id, error_text)
+            error_text +=str(results) 
             finished_ids = []
             for key in  results:
-                if results[key]["status"] == "finished":
+                if re.search("^finished", results[key]["status"]):
                     finished_ids.append(key)
             shuffle(finished_ids)
             for i in range(0, len(finished_ids)):
                 checker = finished_ids[i]
                 checkee = finished_ids[i-1]
-                write_log([CHECKER, quiz_id, checker, checkee])
+                write_log([CHECKER, quiz_id, checker, checkee], quiz_id, participant_id=checker)
         return(examine_results())
     except Exception as e:
-        error_text = ERROR+" ({0}): ".format(OPEN_CHECKING)+str(e)
+        error_text += ERROR+" ({0}): ".format(OPEN_CHECKING)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -705,10 +769,10 @@ def open_answering():
         participant_id = request.form["participant_id"]
         ip_address = request.remote_addr
         if is_quiz_host(quiz_id, participant_id, ip_address):
-            write_log([ANSWER, quiz_id, ip_address, participant_id, "1", ""])
+            write_log([ANSWER, quiz_id, ip_address, participant_id, "1", ""], quiz_id, participant_id=participant_id)
         return(wait())
     except Exception as e:
-        error_text = ERROR+" ({0}): ".format(OPEN_ANSWERING)+str(e)
+        error_text += ERROR+" ({0}): ".format(OPEN_ANSWERING)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
@@ -723,6 +787,6 @@ def ajax_submit_answer():
     question_id = request.form["question_id"]
     answer_string = request.form["answer_string"]
     ip_address = request.remote_addr
-    write_log([ANSWER, quiz_id, ip_address, participant_id, question_id, answer_string])
+    write_log([ANSWER, quiz_id, ip_address, participant_id, question_id, answer_string], quiz_id, participant_id=participant_id)
     return()
 

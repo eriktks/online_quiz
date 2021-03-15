@@ -30,14 +30,14 @@
     <div style="display:table-cell; font-weight:bold; text-align:left;">Name</div>
     <div style="display:table-cell; font-weight:bold;">Status</div>
    </div>
-   {% for key in results %}
+   {% for result in results %}
     {% set background_color = "white" %}
-    {% if results[key]["participant_name"] == participant_name %}
+    {% if result["participant_name"] == participant_name %}
      {% set background_color = "yellow" %}
     {% endif %}
    <div style="display:table-row; background-color:{{background_color}};">
-    <div style="display:table-cell;"> {{results[key]["participant_name"]}} </div>
-    <div style="display:table-cell; text-align:left;"> {{results[key]["status"]}} </div>
+    <div style="display:table-cell;"> {{result["participant_name"]}} </div>
+    <div style="display:table-cell; text-align:left;"> {{result["status"]}} </div>
    </div>
   {% endfor %}
   </div>
