@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <title>Online Quiz: Instructions for quiz masters</title>
+ </head>
+ <style>
+  { background-color: "#cccccc"; }
+ </style>
+ <body style="background-color: lightgrey;">
+  <p><a href="{{base_url}}">Home</a></p>
+  <h1>Online Quiz: instructions for quiz masters</h1>
+  <p>
+   With the Online Quiz you can collect the quiz answers of quiz participants and collectively correct them.
+   These instructions consist of four sections:
+  </p>
+  <ol>
+   <li> <a href="#1">Starting a new quiz</a>
+   <li> <a href="#2">Starting the answer phase</a>
+   <li> <a href="#3">Starting the checking phase</a>
+   <li> <a href="#4">Verifying and updating answer checks</a>
+  </ol>
+  <p>
+   There are also <a href="{{instructions_participant_url}}">instructions for participants.
+
+  <h2><a name="1">1. Starting a new quiz</a></h2>
+  <p>
+   The quiz master can start a new quiz by visiting the <a href="/cgi-bin/online_quiz/">home page</a> and clicking on "Start a new quiz".
+  </p>
+  <img src="/online_quiz/images/index.png" width="285" height="140" alt="">
+  <p>
+   On the next page: enter the name of the quiz, the number of questions and the name of the quiz master. Next click on the button "Start quiz".
+  </p>
+  <img src="/online_quiz/images/start_quiz.png" width="318" height="185" alt="">
+  <p>
+   Next, click on the button "Copy quiz address" to copy the address of the quiz to the clipboard. Send this address to the quiz participants by email.
+  </p>
+  <img src="/online_quiz/images/wait.png" width="506" height="217" alt="">
+  <p>
+   Click on the "Update" button above to check if the participants have entered the quiz.
+
+  <h2><a name="2">2. Starting the answer phase</a></h2>
+  <p>
+   Click on the "Update" button to verify that all expected participants have joined the quiz. If this is the case, press the blue "Open answering" button to enable the participants to start the quiz. Announce the quiz start to the participants and tell them that they can start the quiz by pressing the green "Enter answers". As a quiz master you only click on the green button, if you want to participate in the quiz yourself. If you do not want to participate then do not pres this green button.
+  </p>
+  <p>
+   Next, observe the status of the participants by repeatedly clicking on the "Update" button. Participants who remain in the "waiting" status, did not start with the quiz and may need help. The status of a participant changes to "started" after having started entering answers and to "finished" when having finished entering answers.
+  </p>
+  <h2><a name="3">3. Starting the checking phase</a></h2>
+  <p>
+   When the time period available for making the quiz has finished, announce this to the participants. Ask them to finish the quiz by clicking on the green "Finish answering" button. Next you should click on the "Update" button repeatedly to verify that the status of each participant has changed to "finished". Offer help to participants that remained in the "started" status.
+  </p>
+  <p>
+   When all participants have the "finished" status, click on the blue "Open checking" button. This will arbitrarily assign each participant to another as checker. If you as the quiz master has also made the quiz, you will be assigned someone to check as well. Announce to the participant that they can now start checking another's answers by clicking on the green button "Check other answers".
+  </p>
+  <img src="/online_quiz/images/examine_results_quiz_master.png" width="772" height="210" alt="">
+  <p>
+   Next read all answers aloud. After you have read all the answers, ask the participants to click on the green "Stop checking" button to return to the results table.
+  </p>
+
+  <h2><a name="4">4. Verifying and updating answer checks</a></h2>
+  <p>
+   When having returned to the results table, ask all participants to verify that their own answers have been properly evaluated by clicking on the button "Check own answers". Ask them to click on the button "Approve own score" after having checked the answer evaluation.
+  </p>
+  <p>
+   As a quiz master, verify that all questions have been evaluated by inspecting the column "Checked" in the results table. It should contain the number of questions of the quiz. If the number is lower, ask the checker of that quiz to evaluate the missing quiz answers. You can find the name of the person that has checked the answers in the right-most column with the name "Checker". 
+  </p>
+  <p>
+   Next, click on the blue button "Show all answers" and perform a quick scan to see if there are any correct answers that were evaluated as wrong or wrong answers evaluated as correct. If you find any, ask the checker to update the evaluataion, while providing the number of the question. The name of the checker is listed to the right of each answer.
+  </p> 
+  <img src="/online_quiz/images/check_all_answers.png" width="207" height="510" alt="">
+  <p>
+   Click on the button "Back" to return to the results table.
+  </p>
+  <p>
+   Preferably all evaluation problems can be solved between the participant and the chceker. If necessary, the quiz master can also overrule the evaluation for a participant by clicking on the button "Check PARTICIPANTNAME" button in the result table and changing the evaluation of certain answers.
+  <p>
+   When all evaluation problems have been solved, verify that the status of all participants has changed to "approved". Ask the participants that are still in "checking" status to update their status by clicking on the "Approve own status" button below the results table.
+  </p>
+  <p>
+   The quiz is over when all participants have approved their scores. You can now download the results by clicking on the button "Download all". This will provide you with a file of the type ".csv" which can be imported in spreadsheet programs like Microsoft Excel.
+  </p>
+  <hr>
+  <address>
+   Last update: 20 April 2021. erikt(at)xs4all.nl
+  </address>
+ </body>
+</html>

@@ -16,6 +16,7 @@
      <input type="submit" value="Update" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
     </form>
    </div>
+   {% if checkee_id != "" %}
    <div style="float:left; margin:2px;">
      <form action="{{next_url}}" method="post">
      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
@@ -25,7 +26,6 @@
      <input type="submit" value="Check own answers" style="background-color:whitesmoke; border-color:whitesmoke; border-radius:5px; padding:4px;" />
     </form>
    </div>
-   {% if checkee_id != "" %}
    <div style="float:left; margin:2px;">
      <form action="{{this_url}}" method="post">
      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
@@ -49,6 +49,7 @@
      <input type="submit" value="Download all" style="background-color:white; border-color:white; border-radius:5px; padding:4px;" />
     </form>
    </div>
+   {% endif %}
    <div style="float:left; margin:2px;">
      <form action="{{next_url}}" method="post">
      <input type="hidden" name="quiz_id" value="{{quiz_id}}" />
@@ -58,7 +59,6 @@
      <input type="submit" value="Check other answers" style="background-color:lightgreen; border-color:lightgreen; border-radius:5px; padding:4px;" />
     </form>
    </div>
-   {% endif %}
    {% if open_checking_url != "" %}
     {% if checkee_id == "" %}
      <div style="float:left; margin:2px;">
