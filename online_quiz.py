@@ -762,7 +762,6 @@ def open_checking():
                 checker = finished_ids[i]
                 checkee = finished_ids[i-1]
                 write_log([CHECKER, quiz_id, checker, checkee], quiz_id, participant_id=checker)
-            write_log([CHECKER, quiz_id, participant_id, participant_id], quiz_id, participant_id=participant_id)
         return(examine_results())
     except Exception as e:
         error_text += ERROR+" ({0}): ".format(OPEN_CHECKING)+str(e)
