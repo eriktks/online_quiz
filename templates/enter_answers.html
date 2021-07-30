@@ -21,7 +21,7 @@
    {% for i in range(1, (nbr_of_questions|int)+1) %}
     {% if i <= (page_nbr|int)*10 and i > ((page_nbr|int)-1)*10 %}
      <div style="display:table-row;">
-      <div style="display:table-cell; text-align:right;">{{ i }}.</div>
+      <div style="display:table-cell; text-align:right;">{{ question_numbers[i] }}.</div>
       <div style="display:table-cell; text-align:left;"><input type="text" size="30" name="{{ i }}" value="{{ answers[i|string()] }}" onchange="ajax_submit({{ quiz_id}}, {{ participant_id }}, {{ i }}, $(this).val())" /></div>
      </div>
     {% endif %}

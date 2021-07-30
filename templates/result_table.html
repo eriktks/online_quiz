@@ -11,6 +11,7 @@
     {% if open_checking_url|string() != ""  and checkee_id != "" %}
     <div style="display:table-cell; font-weight:bold; text-align:left;">Checks</div>
     {% endif %}
+    <div style="display:table-cell; font-weight:bold; text-align:left;">Comment</div>
  </div>
    {% for result in results %}
     {% set background_color = "white" %}
@@ -39,6 +40,7 @@
      </div>
     </div>
     {% endif %}
+    <div style="display:table-cell; text-align:left;">{{ result["comment"] }}</div>
    </div>
    {% endfor %}
   </div>

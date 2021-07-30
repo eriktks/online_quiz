@@ -56,6 +56,7 @@ BACK = "back"
 OPEN_CHECKING = "open_checking"
 OPEN_ANSWERING = "open_answering"
 DATE_FORMAT = "%Y%m%d:%H:%M:%S"
+QUESTION_PREFIXES = [ "Cu", "En", "Hi", "Me" ] # [ "Cu", "En", "Hi", "Me" ] # [ "Li", "Sc", "SG", "Wo" ]
 
 
 app = Flask(__name__)
@@ -287,10 +288,26 @@ def add_solos_to_results(results):
     return(results)
 
 
+def add_split_results_to_results(results, nbr_of_questions):
+    for participant in results:
+        if int(nbr_of_questions) != 120:
+            results[participant]["comment"] = ""
+        else:
+            split_results = [ 0, 0, 0, 0 ]
+            for question_nbr in results[participant]["checks"]:
+                if results[participant]["checks"][question_nbr].strip() == "correct":
+                    section_id = int((int(question_nbr) - 1) / 30)
+                    split_results[section_id] += 1 
+            results[participant]["comment"] = " ".join([ QUESTION_PREFIXES[i] + ":" + str(split_results[i]) + ";"  for i in range(0, len(split_results)) ])
+    return results
+
+
 def read_results(quiz_id, error_text=""):
+    quiz_name, nbr_of_questions, error_text = get_quiz_details(quiz_id)
     quiz_name, quiz_date, results = read_results_from_logfile(quiz_id)
     results = add_answers_given_to_results(results)
     results = add_solos_to_results(results)
+    results = add_split_results_to_results(results, nbr_of_questions)
     results_list = []
     for key in results:
         results[key]["participant_id"] = key
@@ -554,6 +571,20 @@ def wait():
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
 
 
+def make_question_numbers(nbr_of_questions):
+    question_numbers = [""]
+    nbr_of_questions = int(nbr_of_questions)
+    if nbr_of_questions != 120:
+        for i in range(1, nbr_of_questions+1):
+            question_numbers.append(i)
+    else:
+        for i in range(1, nbr_of_questions+1):
+            section_id = int((i-1)/30)
+            question_number = i - (30 * section_id)
+            question_numbers.append(QUESTION_PREFIXES[section_id] + str(question_number).zfill(2))
+    return question_numbers
+
+
 @app.route("/"+ENTER_ANSWERS, methods=["POST"])
 def enter_answers():
     error_text = ""
@@ -588,7 +619,7 @@ def enter_answers():
                 answers_changed = True
         #if answers_changed:
         #    return(back())
-        return(render_template("enter_answers"+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status))
+        return(render_template("enter_answers"+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status, question_numbers=make_question_numbers(nbr_of_questions)))
     except Exception as e:
         error_text += ERROR+" ({0}): ".format(ENTER_ANSWERS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
