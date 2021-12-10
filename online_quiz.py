@@ -27,7 +27,7 @@ locale.setlocale(category=locale.LC_ALL, locale="en_US.UTF-8")
 
 
 BASE_URL = "/cgi-bin/online_quiz/"
-DATA_DIR = "/usr/local/WWW/A/t/tjongkim/private/online_quiz/quizzes/"
+DATA_DIR = "/home/erikt/xs4all/private/online_quiz/quizzes/"
 LOG_FILE = "logfile.csv"
 PARTICIPATE = "participate"
 WAIT = "wait"
@@ -56,7 +56,7 @@ BACK = "back"
 OPEN_CHECKING = "open_checking"
 OPEN_ANSWERING = "open_answering"
 DATE_FORMAT = "%Y%m%d:%H:%M:%S"
-QUESTION_PREFIXES = [ "Cu", "En", "Hi", "Me" ] # [ "Cu", "En", "Hi", "Me" ] # [ "Li", "Sc", "SG", "Wo" ]
+QUESTION_PREFIXES = [ "Li", "Sc", "Sp", "Wo" ] # [ "Cu", "En", "Hi", "Me" ] # [ "Li", "Sc", "Sp", "Wo" ]
 
 
 app = Flask(__name__)
@@ -619,7 +619,7 @@ def enter_answers():
                 answers_changed = True
         #if answers_changed:
         #    return(back())
-        return(render_template("enter_answers"+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status, question_numbers=make_question_numbers(nbr_of_questions)))
+        return(render_template(ENTER_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+ENTER_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, page_nbr=page_nbr, answers=answers, last_changed_key=last_changed_key, status=status, question_numbers=make_question_numbers(nbr_of_questions)))
     except Exception as e:
         error_text += ERROR+" ({0}): ".format(ENTER_ANSWERS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
@@ -650,7 +650,7 @@ def examine_results():
         checkee_id = ""
         if get_checkee_id(quiz_id, participant_id) != "notfound":
             checkee_id = "other"
-        return(render_template(EXAMINE_RESULTS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, this_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, download_all_url=BASE_URL+DOWNLOAD_ALL, open_checking_url=open_checking_url, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, results=sort_results_list(results.values()), quiz_name=quiz_name, checkee_id=checkee_id))
+        return(render_template(EXAMINE_RESULTS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, this_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, download_all_url=BASE_URL+DOWNLOAD_ALL, open_checking_url=open_checking_url, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, results=sort_results_list(results.values()), quiz_name=quiz_name, checkee_id=checkee_id, question_numbers=make_question_numbers(nbr_of_questions)))
     except Exception as e:
         error_text += ERROR+" ({0}): ".format(EXAMINE_RESULTS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
@@ -707,7 +707,7 @@ def check_answers():
                     checks[key] = check
         quiz_name, quiz_date, results, error_text = read_results(quiz_id)
         checks, check_counts = read_checks(quiz_id, nbr_of_questions, participant_id_check)
-        return(render_template(CHECK_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=anonymize_id(quiz_id, participant_id, participant_id_check), participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=sort_results_list(results.values()), check_counts=check_counts))
+        return(render_template(CHECK_ANSWERS+HTML_SUFFIX, next_url=BASE_URL+CHECK_ANSWERS, final_url=BASE_URL+EXAMINE_RESULTS, download_url=BASE_URL+DOWNLOAD, participant_name=participant_name, participant_id=participant_id, quiz_id=quiz_id, nbr_of_questions=nbr_of_questions, answers=answers, participant_id_check=anonymize_id(quiz_id, participant_id, participant_id_check), participant_name_check=participant_name_check, page_nbr=page_nbr, checks=checks, results=sort_results_list(results.values()), check_counts=check_counts, question_numbers=make_question_numbers(nbr_of_questions)))
     except Exception as e:
         error_text += ERROR+" ({0}): ".format(CHECK_ANSWERS)+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
@@ -769,7 +769,7 @@ def show_answers():
                 answers.append({"participant_name":results[key]["participant_name"], "answer": answer, "checker": checker, "check": check})
             answers = [answer for answer in sorted(answers, key=lambda answer: answer["answer"].lower())]
             inverted_results.append(answers)
-        return(render_template("show_answers"+HTML_SUFFIX, next_url=BASE_URL+EXAMINE_RESULTS, participant_id=participant_id, quiz_id=quiz_id, results=results.values(), nbr_of_questions=nbr_of_questions, inverted_results=inverted_results))
+        return(render_template("show_answers"+HTML_SUFFIX, next_url=BASE_URL+EXAMINE_RESULTS, participant_id=participant_id, quiz_id=quiz_id, results=results.values(), nbr_of_questions=nbr_of_questions, inverted_results=inverted_results, question_numbers=make_question_numbers(nbr_of_questions)))
     except Exception as e:
         error_text += ERROR+" (show_answers): "+str(e)
     return(render_template(ERROR+HTML_SUFFIX, error_text=error_text))
